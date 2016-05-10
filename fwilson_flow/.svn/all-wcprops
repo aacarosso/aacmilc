@@ -1,0 +1,95 @@
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/ks_nhyp_fa/!svn/ver/424/ks_spectrum
+END
+setup.c
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/ks_nhyp_fa/!svn/ver/302/ks_spectrum/setup.c
+END
+Make_bc
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/ks_nhyp_fa/!svn/ver/388/ks_spectrum/Make_bc
+END
+d_congrad_helpers.c
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/ks_nhyp_fa/!svn/ver/295/ks_spectrum/d_congrad_helpers.c
+END
+gauge_info.c
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/ks_nhyp_fa/!svn/ver/295/ks_spectrum/gauge_info.c
+END
+Make_local
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/ks_nhyp_fa/!svn/ver/295/ks_spectrum/Make_local
+END
+Make_cluster_gcc
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/ks_nhyp_fa/!svn/ver/296/ks_spectrum/Make_cluster_gcc
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/ks_nhyp_fa/!svn/ver/424/ks_spectrum/README
+END
+control.c
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/ks_nhyp_fa/!svn/ver/295/ks_spectrum/control.c
+END
+defines.h
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/ks_nhyp_fa/!svn/ver/295/ks_spectrum/defines.h
+END
+Make_template
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/ks_nhyp_fa/!svn/ver/302/ks_spectrum/Make_template
+END
+params.h
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/ks_nhyp_fa/!svn/ver/296/ks_spectrum/params.h
+END
+Make_eureka
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/ks_nhyp_fa/!svn/ver/296/ks_spectrum/Make_eureka
+END
+lattice.h
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/ks_nhyp_fa/!svn/ver/296/ks_spectrum/lattice.h
+END
+d_congrad_v6.c
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/ks_nhyp_fa/!svn/ver/295/ks_spectrum/d_congrad_v6.c
+END
+spectrum_includes.h
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/ks_nhyp_fa/!svn/ver/295/ks_spectrum/spectrum_includes.h
+END
