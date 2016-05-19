@@ -46,11 +46,11 @@ int main(int argc, char **argv) {
 		}
 	}
   // Flow to time tmax and save nsave configurations along the way
-  //wflow(F_OFFSET(link), 0.0, tmax, 1);
+  wflow(F_OFFSET(link), 0.0, tmax, 1);
 
 	// Test variable epsilon gauge flow
 	int imp_steps;
-	imp_steps = wflow_imp(F_OFFSET(link0), 0, tmax, 0);
+	//imp_steps = wflow_imp(F_OFFSET(link0), 0, tmax, 0);
 
   // Check ploops
   //plp = fploop(F_OFFSET(link),3);
@@ -85,10 +85,10 @@ int main(int argc, char **argv) {
   node0_printf("\n");
 */
   // generate npbp random fields at tmax
-  t = 0;//change to tmax for adj flow
+  t = tmax;//change to tmax for adj flow
   int ksi, n;
   complex dot1, dot2;
-  node0_printf("ksi: ");
+  node0_printf("ksi %g ",t);
   for (n=0; n<npbp; n++){
     grsourcen(EVENANDODD);
     ksi = F_OFFSET(ksi1) + n*sizeof(su3_vector);
@@ -106,14 +106,13 @@ int main(int argc, char **argv) {
   // Adjoint flow loop 
 
   node0_printf("\nBEGINNING FERMION ADJOINT FLOW \n\n");
-	int k = nsave-1;
-	Real ti, N = floor(tmax/(epsilon*nsave)), cut = 1e-7;
-	Real counter = 0;
+	int k = nsave-1, trig_max = 1;
+	Real ti, N = floor(tmax/(epsilon*nsave)), cut = 1e-7, counter = 0;
 	double flowtime = 0;
 	node0_printf("floor = %g\n",N);
 	imp_steps = 0;
 	
-  for (istep == 0; t > 0; istep++){
+  for (istep = 0; t > 0; istep++){
     // reset lattice
     for (dir = 0; dir < 4; dir++){
       FORALLSITES(i,s){
@@ -125,12 +124,13 @@ int main(int argc, char **argv) {
 		ti = k*N*epsilon;
 		tvar = dclock();
     wflow(F_OFFSET(link0)+4*k*sizeof(su3_matrix), ti, t, 0);
+		//wflow_imp(F_OFFSET(link0)+4*trigmax*sizeof(su3_matrix), 0, t, 0);
 		flowtime += dclock() - tvar;
 		counter += (t-ti)/epsilon;
 		//counter += t/epsilon;
 		//wflow(F_OFFSET(link0),0,t,0);
 		//imp_steps += wflow_imp(F_OFFSET(link0), 0, t, 0);
-    node0_printf("\nksi: ");
+    node0_printf("\nksi %g ", t-epsilon);
     // loop over npbp fields
     for (n=0; n<npbp; n++){
       ksi = F_OFFSET(ksi1) + n*sizeof(su3_vector);
