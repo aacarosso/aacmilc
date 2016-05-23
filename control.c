@@ -46,11 +46,18 @@ int main(int argc, char **argv) {
 		}
 	}
   // Flow to time tmax and save nsave configurations along the way
-  wflow(F_OFFSET(link), 0.0, tmax, 1);
+  //wflow(F_OFFSET(link), 0.0, tmax, 1);
 
 	// Test variable epsilon gauge flow
-	int imp_steps;
+	int imp_steps, num_eps = 0;
 	//imp_steps = wflow_imp(F_OFFSET(link0), 0, tmax, 0);
+
+	double *eps = wflow_imp_epsvals(F_OFFSET(link0), 0, tmax, 0);
+	for (yep = 0; yep < (int)(tmax/epsilon)-1; yep++){
+		node0_printf("%g\n",eps[yep]);
+		if (eps[yep] != 0) { num_eps += 1;}
+	}
+	node0_printf("num_eps = %d\n",num_eps);
 
   // Check ploops
   //plp = fploop(F_OFFSET(link),3);
@@ -105,13 +112,13 @@ int main(int argc, char **argv) {
 
   // Adjoint flow loop 
 
-  node0_printf("\nBEGINNING FERMION ADJOINT FLOW \n\n");
-	int k = nsave-1, trig_max = 1;
+  node0_printf("\nBEGINNING FERMION ADJOINT FLOW\n\n");
+	int k = nsave-1, j;
 	Real ti, N = floor(tmax/(epsilon*nsave)), cut = 1e-7, counter = 0;
-	double flowtime = 0;
+	double flowtime = 0, sum_eps;
 	node0_printf("floor = %g\n",N);
-	imp_steps = 0;
-	
+	j = num_eps-1;
+	sum_eps = eps[j];
   for (istep = 0; t > 0; istep++){
     // reset lattice
     for (dir = 0; dir < 4; dir++){
@@ -120,27 +127,34 @@ int main(int argc, char **argv) {
       }
     }
     // flow gauge fields to t, obtain W's
-		if (pow(t/epsilon - k*N,2) < cut ) k -= 1;
-		ti = k*N*epsilon;
+		//if (pow(t/epsilon - k*N,2) < cut ) k -= 1;
+		//ti = k*N*epsilon;
+		if (pow(t - (tmax - sum_eps),2) < cut){
+			j -= 1;
+			sum_eps += eps[j];
+		}
+		node0_printf(" j = %d sum_eps = %g\n", j, sum_eps);
 		tvar = dclock();
-    wflow(F_OFFSET(link0)+4*k*sizeof(su3_matrix), ti, t, 0);
-		//wflow_imp(F_OFFSET(link0)+4*trigmax*sizeof(su3_matrix), 0, t, 0);
+    //wflow(F_OFFSET(link0)+4*k*sizeof(su3_matrix), ti, t, 0);
+		wflow_imp(F_OFFSET(link0), 0, tmax-sum_eps, 0);
+		wflow(F_OFFSET(link),tmax-sum_eps,t,0);
 		flowtime += dclock() - tvar;
-		counter += (t-ti)/epsilon;
+		//counter += (t-ti)/epsilon;
 		//counter += t/epsilon;
 		//wflow(F_OFFSET(link0),0,t,0);
 		//imp_steps += wflow_imp(F_OFFSET(link0), 0, t, 0);
-    node0_printf("\nksi %g ", t-epsilon);
+    node0_printf("ksi %g ", t-epsilon);
     // loop over npbp fields
     for (n=0; n<npbp; n++){
       ksi = F_OFFSET(ksi1) + n*sizeof(su3_vector);
       copy_latvec(ksi, F_OFFSET(lambda3), EVENANDODD);
-      fermion_adjointstep(F_OFFSET(lambda3));
+      fermion_adjointstep(F_OFFSET(lambda3), epsilon);
       copy_latvec(F_OFFSET(lambda0), ksi, EVENANDODD);
       dot1 = dot_su3_latvec(ksi, ksi, EVENANDODD);
       node0_printf("%g  ", dot1.real);
     }
     node0_printf("\n");
+		t -= epsilon;
 		/*tvar = dclock();
 		yep = fmeas_link(F_OFFSET(chi),F_OFFSET(W0), F_OFFSET(psi), mass);
 		ttime += dclock() - tvar;*/
@@ -164,7 +178,6 @@ int main(int argc, char **argv) {
     node0_printf("forward lambda3^2: %g\n",dot1.real);
 */
     node0_printf("\n\n");
-    t -= epsilon;
   }
 
   node0_printf("\nENDING FERMION ADJOINT FLOW \n\n");
