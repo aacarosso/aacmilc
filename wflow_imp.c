@@ -10,15 +10,15 @@
 //-------------------------------------------------------------------
 
 //-------------------------------------------------------------------
-void wflow_imp(field_offset off, Real ti, Real tf, int savelink) {
+void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
   register int dir, i;
 	register site *s;
-  int last=0, steps_per_eps = 10, nsave = 2, step, trig = 0;
-	Real k, l=1, dl;
-  Real t=0, cut = 1e-7, eps_max = 0.1, eps = epsilon;
+  int last=0, step;
+	Real k, l=eps/epsilon, dl;
+  Real t=ti, cut = 1e-7, eps_max = 0.1;
   double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
 	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
-  double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval, time_epsmax = 0;
+  double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
 	complex tc;
   su3_matrix t_mat, *S[4];
   anti_hermitmat *A[4];
@@ -38,35 +38,12 @@ void wflow_imp(field_offset off, Real ti, Real tf, int savelink) {
   
 	node0_printf("tf = %g  ti = %g\nBEGIN WILSON FLOW\n",tf,ti);
 	
-	if ((savelink == 1) && (ti < cut)){
-		node0_printf("saving t = 0 configuration (1 of %d)\n",nsave);
-		for (dir = 0; dir < 4; dir ++){
-			FORALLSITES(i,s){
-	  	  su3mat_copy(&(s->link[dir]),
-					(su3_matrix *)F_PT(s,F_OFFSET(link0)+dir*sizeof(su3_matrix)));	
-			}
-  	}
-  }
-  
   d_plaquette(&Ps1, &Pt1);
-
-	//node0_printf("steps_per_eps = %d\n", steps_per_eps);
 
 	// Wilson flow!
   for (step = 0; fabs(t) < fabs(tf) - fabs(epsilon)/2; step++){
 		// Save W?
 		if ( pow((t+eps-tf),2) < cut){ last = 1;}
-		
-		// Save field at first eps_max
-		if (savelink == 1 && pow(eps - eps_max,2) < cut){
-			node0_printf("saving t = 0 configuration (1 of %d)\n",nsave);
-			for (dir = 0; dir < 4; dir ++){
-				FORALLSITES(i,s){
-	  		  su3mat_copy(&(s->link[dir]),
-						(su3_matrix *)F_PT(s,F_OFFSET(link1)));
-				}
-  		}
-  	}
     
 		fstout_step_rk(S, A, eps, last);
 		t += eps;
@@ -123,7 +100,7 @@ void wflow_imp(field_offset off, Real ti, Real tf, int savelink) {
     d_plaquette(&ssplaq, &stplaq);
     td = (ssplaq + stplaq) / 2;
     check = 12 * t * t * (3 - td);
-
+/*
 		// Interpolate between eps steps
 		if ( eps > epsilon ){
 			//slope_E = (E - E0)/eps;
@@ -143,54 +120,52 @@ void wflow_imp(field_offset off, Real ti, Real tf, int savelink) {
 				//new_valuek = tk*tk*Ek;
 				Ek = new_valuek/(tk*tk);
 				der_valuek = tk*(new_valuek - old_valuek)/epsilon;
-				node0_printf("WFLOW %g %g %g %g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
-				              der_valuek, checkk, topok);
+				//node0_printf("WFLOW %g %g %g %g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
+				  //            der_valuek, checkk, topok);
 			}
 		}
-
-    node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
+*/
+    //node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
 		
 		// Setting epsilon
 		d_plaquette(&Ps2, &Pt2);
 		dS = fabs((Ps2 + Pt2)/2 - (Ps1 + Pt1)/2);
 		if (step == 0){
 			eta = dS*eps;
-			node0_printf(" eta %g\n", eta);
+			//node0_printf(" eta %g\n", eta);
 		}
 		eps = eta/dS;
-		node0_printf(" eta/dS %g", eps);
+		//node0_printf(" eta/dS %g", eps);
 		dl = floor(100*eps)/(epsilon*100) - l;
 		if (eps < (l+0.99)*epsilon){
 			eps = l*epsilon;
 		}
 		else {
-			//node0_printf(" l += %g\n", dl);
+			node0_printf(" l += %g\n", dl);
 			l += 1;
 			eps = l*epsilon;
 		}
-		node0_printf(" eps_new %g l_new %g\n",eps,l);
+		//node0_printf(" eps_new %g l_new %g\n",eps,l);
 
 		if (eps >= eps_max){
-			if (trig == 0){ time_epsmax = 1; }
 			eps = eps_max;
-			trig = 1;
 			l = eps_max/epsilon;
-			node0_printf(" eps_max %g l %g\n", eps_max, l);
+			//node0_printf(" eps_max %g l %g\n", eps_max, l);
 		}
 
 		Ps1 = Ps2;
 		Pt1 = Pt2;
 	
 		// Don't shoot past tmax
-		if (t + eps > tmax){
-			eps = tmax - t;
+		if (t + eps > tf){
+			eps = tf - t;
 			l = 100*eps/(100*epsilon);
-			node0_printf(" eps %g l %g\n", eps, l);
+			//node0_printf(" eps %g l %g\n", eps, l);
 		}
 
     last = 0;
   }
-  node0_printf("END WILSON FLOW\nsteps = %d\n\n",step+1);
+  node0_printf("END WILSON FLOW\nsteps = %d\n",step+1);
 
   for (dir = 0; dir < 4; dir++) {
     free(S[dir]);

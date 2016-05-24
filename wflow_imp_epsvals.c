@@ -13,12 +13,12 @@
 double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
   register int dir, i;
 	register site *s;
-  int last=0, steps_per_eps = 10, nsave = 2, step, trig = 0;
-	Real k, l=1, dl;
-  Real t=0, cut = 1e-7, eps_max = 0.1, eps = epsilon;
+  int last=0, step, k=0, j=0;
+	Real l=1, dt, t_epsmax=100;
+  Real t=ti, cut = 1e-7, eps_max = 0.1, eps = epsilon;
   double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
 	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
-  double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval, time_epsmax = 0;
+  double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
 	double *epsilons = (double *)malloc((int)(tmax/epsilon)*sizeof(double));
 	complex tc;
   su3_matrix t_mat, *S[4];
@@ -51,22 +51,27 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
   
   d_plaquette(&Ps1, &Pt1);
 
-	//node0_printf("steps_per_eps = %d\n", steps_per_eps);
-
 	// Wilson flow!
   for (step = 0; fabs(t) < fabs(tf) - fabs(epsilon)/2; step++){
 		// Save W?
 		if ( pow((t+eps-tf),2) < cut){ last = 1;}
 		
-		// Save field at first eps_max
-		if (savelink == 1 && pow(eps - eps_max,2) < cut){
-			node0_printf("saving t = 0 configuration (1 of %d)\n",nsave);
+		// Save nsave fields in eps_max phase
+		if (savelink == 1 && pow(eps - eps_max,2) < cut && pow(epsilons[step-1] - eps_max,2) > cut){
+			dt = eps_max*floor((tmax - t)/(eps_max*(nsave - 1)));
+			t_epsmax = t;
+			node0_printf(" t_epsmax = %g dt = %g\n", t_epsmax, dt);
+		}
+		//node0_printf(" k*dt %g pow(t - t_epsmax - k*dt,2) = %g\n", (double)j, pow(t - t_epsmax - j*dt,2));
+		if (savelink == 1 && pow(t - t_epsmax - j*dt,2) < cut && j < nsave - 1){
+			node0_printf("saving t = %g configuration (%d of %d)\n", t, j+2, nsave);
 			for (dir = 0; dir < 4; dir ++){
 				FORALLSITES(i,s){
 	  		  su3mat_copy(&(s->link[dir]),
-						(su3_matrix *)F_PT(s,F_OFFSET(link1)));
+						(su3_matrix *)F_PT(s, F_OFFSET(link1) + (4*j+dir)*sizeof(su3_matrix)));
 				}
   		}
+			j += 1;
   	}
     
 		fstout_step_rk(S, A, eps, last);
@@ -150,7 +155,7 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
 			}
 		}
 
-    //node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
+    node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
 		
 		// Setting epsilon
 		d_plaquette(&Ps2, &Pt2);
@@ -161,7 +166,7 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
 		}
 		eps = eta/dS;
 		//node0_printf(" eta/dS %g", eps);
-		dl = floor(100*eps)/(epsilon*100) - l;
+		//dl = floor(100*eps)/(epsilon*100) - l;
 		if (eps < (l+0.99)*epsilon){
 			eps = l*epsilon;
 		}
@@ -173,9 +178,7 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
 		//node0_printf(" eps_new %g l_new %g\n",eps,l);
 
 		if (eps >= eps_max){
-			if (trig == 0){ time_epsmax = 1; }
 			eps = eps_max;
-			trig = 1;
 			l = eps_max/epsilon;
 			//node0_printf(" eps_max %g l %g\n", eps_max, l);
 		}
@@ -184,8 +187,8 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
 		Pt1 = Pt2;
 	
 		// Don't shoot past tmax
-		if (t + eps > tmax){
-			eps = tmax - t;
+		if (t + eps > tf){
+			eps = tf - t;
 			l = 100*eps/(100*epsilon);
 			//node0_printf(" eps %g l %g\n", eps, l);
 		}
@@ -199,6 +202,7 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
     free(A[dir]);
   }
 
+	// fill the rest of eps array with zeroes
 	for (step = step; step < (int)(tmax/epsilon)-1; step++) epsilons[step] = 0;
 	return epsilons;
 }
