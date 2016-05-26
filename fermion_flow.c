@@ -1,4 +1,5 @@
 // Routine for fixed epsilon fermion adjoint flow using checkpoints.
+// Begins at tmax and flows to 0.
 
 #include "wflow_includes.h"
 
@@ -28,9 +29,8 @@ void fermion_flow()
 
   // Adjoint flow loop 
 
-
 	node0_printf("\nBEGINNING FERMION ADJOINT FLOW\n\n");
-	for (istep = 0; t > 0; istep++){
+	for (istep = 0; t > cut; istep++){
 		// reset lattice
 		for (dir = 0; dir < 4; dir++){
       FORALLSITES(i,s){
