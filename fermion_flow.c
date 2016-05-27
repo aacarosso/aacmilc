@@ -7,9 +7,9 @@ void fermion_flow()
 {
 	register int i;
 	register site *s;	
-	int istep, n, dir, ksi, k = nsave-1;
+	int istep, n, dir, ksi, k = nsave-1, yep;
 	Real t = tmax, ti, N = floor(tmax/(epsilon*nsave)), cut = 1e-7, counter = 0;
-	double flowtime = 0, tvar, ttime = dclock();
+	double flowtime = 0, tvar, tvar1, ttime = 0;
 	complex dot1, dot2;
 	node0_printf("floor = %g\n",N);
 
@@ -21,9 +21,10 @@ void fermion_flow()
     dot1 = dot_su3_latvec(ksi, ksi, EVENANDODD);
     node0_printf("%.10g  ", dot1.real);
   }
+	//tvar1 = dclock();
   //yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
   //node0_printf("fmeas_link time = %f\n",dclock()-ttime);
-  ttime = dclock() - ttime;
+  //ttime += dclock() - tvar1;
 
   node0_printf("\n");
 
@@ -58,9 +59,9 @@ void fermion_flow()
     t -= epsilon;
 
 		// Measure pbp
-    /*tvar = dclock();
+    tvar1 = dclock();
     yep = fmeas_link(F_OFFSET(chi),F_OFFSET(W0), F_OFFSET(psi), mass);
-    ttime += dclock() - tvar;*/
+    ttime += dclock() - tvar1;
 
 /*  // sequence test
     copy_latvec(F_OFFSET(g_rand),F_OFFSET(chi0),EVENANDODD);
