@@ -63,6 +63,13 @@ MY_OBJECTS =      \
   blocked_gauge_loops.o \
   wflow.o           \
 	wflow_imp.o       \
+	wflow_imp_epsvals.o \
+	wflow_imp_epsvals_geom8.o \
+	wflow_imp_saves.o \
+	fermion_flow.o    \
+	fermion_flow_imp.o \
+	fermion_flow_chunk.o \
+	fermion_flow_geom8.o \
   fermion_adjointstep.o    \
   fermion_forwardstep.o
 
