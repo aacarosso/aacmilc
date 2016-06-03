@@ -35,7 +35,12 @@ void staple(su3_matrix *stp[4]);
 void wflow(field_offset off, Real ti, Real tf, int savelink); 
 void wflow_imp(double eps, field_offset off, Real ti, Real tf);
 double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink);
+double *wflow_imp_epsvals_geom8(field_offset off, Real ti, Real tf, int savelink);
+void wflow_imp_saves(double eps, field_offset off, Real ti, Real tf, double *times, int size);
 void fermion_flow();
+void fermion_flow_imp();
+void fermion_flow_chunk(field_offset off, double ti, double tf, double eps);
+void fermion_flow_geom8();
 void fermion_adjointstep(field_offset flow_vec, double eps);
 void fermion_forwardstep(field_offset flow_vec, double eps);
 void mcrg_block(Real t, int blmax);//aac

@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------
-// Main procedure for fermionic Wilson flow - still in progress
+// Main procedure for fermionic Wilson flow
 // the control file that worked for pure gauge flow is renamed to ocontrol.c
 #define CONTROL
 #include "wflow_includes.h"
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 #else
   node0_printf("\nPERIODIC BC in time direction\n");
 #endif
-//-------------------------------------------------------------------
+	//-------------------------------------------------------------------
   complex plp;
   plp = fploop(F_OFFSET(link),3);
   node0_printf("plp(linkstart) = %.5g  %.5g\n",plp.real,plp.imag);
@@ -45,34 +45,49 @@ int main(int argc, char **argv) {
 			su3mat_copy(&(s->link[dir]), &(s->link0[dir]));
 		}
 	}
+
   // Flow to time tmax and save nsave configurations along the way
   //wflow(F_OFFSET(link), 0.0, tmax, 1);
 
-	// Test variable epsilon gauge flow
-	int imp_steps, num_eps = 0;
-	//imp_steps = wflow_imp(F_OFFSET(link0), 0, tmax, 0);
+	//fermion_flow_imp();
 
-	double *eps = wflow_imp_epsvals(F_OFFSET(link0), 0, tmax, 1), t_epsmax=0, eps_max=0.1;
+	fermion_flow_geom8();
+
+	// Test variable epsilon gauge flow
+	int num_eps = 0;
+/*
+	double *eps = wflow_imp_epsvals_series(F_OFFSET(link0), 0, tmax, 1);
+	double t_epsmax=0, eps_max=0.1, cut = 1e-7;
 	for (yep = 0; yep < (int)(tmax/epsilon)-1 && eps[yep] != 0; yep++){
 		node0_printf("%g\n",eps[yep]);
-		if (eps[yep] != 0) { num_eps += 1;}
-		if (eps[yep] < eps_max-1e-7 && eps[yep-1] <= eps_max - 1e-7 ){ t_epsmax += eps[yep]; }
+		if (eps[yep] > cut) { num_eps += 1;}
+		if (eps[yep] < eps_max-cut && eps[yep-1] <= eps_max - cut ){ t_epsmax += eps[yep]; }
 	}
 	node0_printf("num_eps = %d t_epsmax = %g\n", num_eps, t_epsmax);
 	double dt = eps_max*floor((tmax - t_epsmax)/(eps_max*(nsave - 1)));
+	
+	double ts = 8*eps_max*floor((tmax - t_epsmax - eps[num_eps-1])/(8*eps_max));
+	double times[3]={t_epsmax + (1.0/8)*ts, t_epsmax+(2.0/8)*ts,t_epsmax+(3.0/8)*ts};
+	int size = sizeof(times)/sizeof(times[0]);
+	node0_printf("ts = %g times[0] = %g size = %d\n",ts, times[0],size);
+	wflow_imp_saves(eps_max, F_OFFSET(link1), t_epsmax,
+		t_epsmax + (4.0/8)*ts, times, size);
+
+	fermion_flow_chunk(F_OFFSET(link0)+3*4*sizeof(su3_matrix), 3.02, 4.12, eps_max);
+*/
   // Check ploops
   //plp = fploop(F_OFFSET(link),3);
   //node0_printf("plp(linkmax) = %.5g  %.5g\n",plp.real,plp.imag);
-  
+/*  
 	// Adjoint Flow
 
 	// Fixed epsilon flow
-	//fermion_flow();
+	fermion_flow();
 
   // generate npbp random fields at tmax
-  t = tmax;//tmax;//change to tmax for adj flow
+  t = 0;//change to tmax for adj flow
   int ksi, n, j, l=nsave-2;
-	double flowtime = 0, sum_eps, ttime=dclock(), tvar;
+	double flowtime = 0, sum_eps, ttime=0, tvar, tvar1;
 	Real ti, cut = 1e-7, counter = 0;
   complex dot1, dot2;
   node0_printf("ksi %g ",t);
@@ -89,7 +104,7 @@ int main(int argc, char **argv) {
 
   node0_printf("\n");
 
-  node0_printf("\nBEGINNING FERMION ADJOINT FLOW\n\n");
+  node0_printf("\nBEGIN FERMION ADJOINT FLOW\n\n");
 	j = num_eps-1;
 	sum_eps = eps[j];
   for (istep = 0; t > cut; istep++){
@@ -126,17 +141,18 @@ int main(int argc, char **argv) {
     }
     node0_printf("\n");
 		t -= epsilon;
-		/*tvar = dclock();
+		tvar1 = dclock();
 		yep = fmeas_link(F_OFFSET(chi),F_OFFSET(W0), F_OFFSET(psi), mass);
-		ttime += dclock() - tvar;*/
+		ttime += dclock() - tvar1;
     node0_printf("\n\n");
   }
 
-  node0_printf("\nENDING FERMION ADJOINT FLOW \n\n");
+  node0_printf("\nEND FERMION ADJOINT FLOW\n\n");
  
   node0_printf("total flow time = %f\n",flowtime);
 	node0_printf("meas_link total time = %f\n",ttime);
-//-------------------------------------------------------------------
+*/
+	//-------------------------------------------------------------------
   rephase(ON);  
 
   leanlinks();

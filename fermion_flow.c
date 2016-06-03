@@ -1,4 +1,5 @@
 // Routine for fixed epsilon fermion adjoint flow using checkpoints.
+
 // Begins at tmax and flows to 0.
 
 #include "wflow_includes.h"
@@ -10,8 +11,10 @@ void fermion_flow()
 	int istep, n, dir, ksi, k = nsave-1, yep;
 	Real t = tmax, ti, N = floor(tmax/(epsilon*nsave)), cut = 1e-7, counter = 0;
 	double flowtime = 0, tvar, tvar1, ttime = 0;
-	complex dot1, dot2;
-	node0_printf("floor = %g\n",N);
+	complex dot1;
+
+	node0_printf("FERMION_FLOW: fixed epsilon\n");
+	node0_printf("steps per checkpoint = %g\n", N);
 
 	node0_printf("ksi %g ",t);
   for (n=0; n<npbp; n++){
@@ -25,12 +28,11 @@ void fermion_flow()
   //yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
   //node0_printf("fmeas_link time = %f\n",dclock()-ttime);
   //ttime += dclock() - tvar1;
-
   node0_printf("\n");
 
   // Adjoint flow loop 
 
-	node0_printf("\nBEGINNING FERMION ADJOINT FLOW\n\n");
+	node0_printf("\nBEGINNING FERMION ADJOINT FLOW t = tmax -> t = 0\n\n");
 	for (istep = 0; t > cut; istep++){
 		// reset lattice
 		for (dir = 0; dir < 4; dir++){
@@ -38,6 +40,7 @@ void fermion_flow()
         su3mat_copy(&(s->link0[dir]),&(s->link[dir]));
       }
     }
+
     // flow gauge fields to t, obtain W's
     if (pow(t/epsilon - k*N,2) < cut ) k -= 1;
 		ti = k*N*epsilon;
@@ -46,6 +49,7 @@ void fermion_flow()
 		flowtime += dclock() - tvar;
     counter += (t-ti)/epsilon;
     node0_printf("ksi %g ", t-epsilon);
+
     // loop over npbp fields
     for (n=0; n<npbp; n++){
       ksi = F_OFFSET(ksi1) + n*sizeof(su3_vector);

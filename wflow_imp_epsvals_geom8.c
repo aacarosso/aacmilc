@@ -1,27 +1,28 @@
 // ------------------------------------------------------------------
-// Flows link to tf given some U(ti) with offset off.
-// Improved scheme for variable epsilon
+// Flows link to tf given some U(ti) with offset "off".
+// Improved scheme for variable epsilon.
+// Taylored for fermion_flow_geom8.c
 
-// if argument savelink = 1, it saves nsave configurations:
-// 		t = 0 in link0
+// If argument savelink = 1, it saves nsave configurations along the way:
+//		t = 0 in link0
 //		t = t_epsmax in link1
-// 		nsave-2 more configurations equally spaced in the eps_max regime.
-// Saves the W's obtained in the last step, for fermion flow.
+//		nsave-2 configurations according to geometric checkpoint method.
+// Saves the W's obtained in the last step.
 // nsave must be consistent with the number of fields link0,1,2,3,... in lattice.h
 
-// Returns an array pointer containing all the eps values in succession.
+// Returns an arrray pointer containing all eps values in succession.
 
 #include "wflow_includes.h"
 //-------------------------------------------------------------------
 
 //-------------------------------------------------------------------
-double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
+double *wflow_imp_epsvals_geom8(field_offset off, Real ti, Real tf, int savelink) {
   register int dir, i;
 	register site *s;
   int last=0, step, k=0, j=0;
 	Real l=1, dt, t_epsmax=100;
   Real t=ti, cut = 1e-7, eps_max = 0.1, eps = epsilon;
-  double E, old_value, new_value=0, der_value, check, dS, eta;//, slope_E, slope_td, slope_topo;
+  double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
 	double E0, td0, topo0;//, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
 	double *epsilons = (double *)malloc((int)(tmax/epsilon)*sizeof(double));
@@ -42,7 +43,7 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
 		}
 	}
   
-	node0_printf("BEGIN WILSON FLOW (IMP) tf = %g  ti = %g\n",tf,ti);
+	node0_printf("BEGIN WILSON FLOW (IMP) tf = %g  ti = %g\n", tf, ti);
 	
 	if ((savelink == 1) && (ti < cut)){
 		node0_printf("saving t = 0 configuration (1 of %d)\n",nsave);
@@ -55,7 +56,8 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
   }
   
   d_plaquette(&Ps1, &Pt1);
-
+	
+	double mult, f[4] = {0, 0.5, 0.75, 0.875};
 	// Wilson flow!
   for (step = 0; fabs(t) < fabs(tf) - fabs(epsilon)/2; step++){
 		// Save W?
@@ -65,10 +67,12 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
 		if (savelink == 1 && pow(eps - eps_max,2) < cut && pow(epsilons[step-1] - eps_max,2) > cut){
 			dt = eps_max*floor((tmax - t)/(eps_max*(nsave - 1)));
 			t_epsmax = t;
-			node0_printf(" t_epsmax = %g dt = %g\n", t_epsmax, dt);
+			node0_printf(" t_epsmax = %g dt = %g ", t_epsmax, dt);
+			mult = floor((tf - t_epsmax )/(eps_max*8));
+			node0_printf("mult = %f\n",mult);
+
 		}
-		//node0_printf(" k*dt %g pow(t - t_epsmax - k*dt,2) = %g\n", (double)j, pow(t - t_epsmax - j*dt,2));
-		if (savelink == 1 && pow(t - t_epsmax - j*dt,2) < cut && j < nsave - 1){
+		if (savelink == 1 && pow(t - t_epsmax - f[j]*mult*8*eps_max,2) < cut && j < nsave - 1){
 			node0_printf("saving t = %g configuration (%d of %d)\n", t, j+2, nsave);
 			for (dir = 0; dir < 4; dir ++){
 				FORALLSITES(i,s){
@@ -209,7 +213,6 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink) {
 
 	// fill the rest of eps array with zeroes
 	for (step = step; step < (int)(tmax/epsilon)-1; step++) epsilons[step] = 0;
-
 	return epsilons;
 }
 

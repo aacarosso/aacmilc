@@ -1,10 +1,8 @@
 // ------------------------------------------------------------------
 // Flows link to tf given some U(ti) with offset off.
-// if argument savelink = 1, it saves nsave configurations along the way.
-// also saves the W's obtained in the last step.
-// nsave must be consistent with the number of fields link0,1,2,3,... in lattice.h
+// Saves the W's obtained in the last step.
 
-// improved scheme for variable epsilon
+// improved scheme for variable epsilon; begins with stepsize = eps
 
 #include "wflow_includes.h"
 //-------------------------------------------------------------------
@@ -17,7 +15,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 	Real k, l=eps/epsilon, dl;
   Real t=ti, cut = 1e-7, eps_max = 0.1;
   double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
-	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
+	double E0, td0, topo0;//, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
 	complex tc;
   su3_matrix t_mat, *S[4];
@@ -36,7 +34,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 		}
 	}
   
-	node0_printf("tf = %g  ti = %g\nBEGIN WILSON FLOW\n",tf,ti);
+	node0_printf("BEGIN WILSON FLOW (IMP) tf = %g  ti = %g\n",tf,ti);
 	
   d_plaquette(&Ps1, &Pt1);
 
@@ -141,7 +139,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 			eps = l*epsilon;
 		}
 		else {
-			node0_printf(" l += %g\n", dl);
+			//node0_printf(" l += %g\n", dl);
 			l += 1;
 			eps = l*epsilon;
 		}
@@ -165,7 +163,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 
     last = 0;
   }
-  node0_printf("END WILSON FLOW\nsteps = %d\n",step+1);
+  node0_printf("END WILSON FLOW\n");
 
   for (dir = 0; dir < 4; dir++) {
     free(S[dir]);
