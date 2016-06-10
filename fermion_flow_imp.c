@@ -54,17 +54,17 @@ void fermion_flow_imp() {
     tvar = dclock();
     if (t - t_epsmax > cut){
       //node0_printf("IMPROV1: ti = t_epsmax+l*dt = %g tf = %g\n", t_epsmax+l*dt, tmax-sum_eps);
-      //wflow_imp(eps[j],F_OFFSET(link1)+4*l*sizeof(su3_matrix), t_epsmax+l*dt, tmax-sum_eps);
-      wflow_imp(eps[j],F_OFFSET(link1)+4*l*sizeof(su3_matrix), t_epsmax+l*dt, t-epsilon);
+      wflow_imp(eps[j],F_OFFSET(link1)+4*l*sizeof(su3_matrix), t_epsmax+l*dt, tmax-sum_eps);
+      //wflow_imp(eps[j],F_OFFSET(link1)+4*l*sizeof(su3_matrix), t_epsmax+l*dt, t-epsilon);
     }
     else {
       //node0_printf("IMPROV2: ti = 0 tf = %g\n",tmax-sum_eps);
-      //wflow_imp(epsilon,F_OFFSET(link0), 0, tmax-sum_eps);
-      wflow_imp(epsilon,F_OFFSET(link0), 0, t-epsilon);
+      wflow_imp(epsilon,F_OFFSET(link0), 0, tmax-sum_eps);
+      //wflow_imp(epsilon,F_OFFSET(link0), 0, t-epsilon);
     }
     //node0_printf("FIXED: ti = %g tf = %g\n",tmax-sum_eps,t);
-    //wflow(F_OFFSET(link),tmax-sum_eps,t,0);
-    wflow(F_OFFSET(link),t-epsilon,t,0);
+    wflow(F_OFFSET(link), tmax-sum_eps, t, 0);
+    //wflow(F_OFFSET(link),t-epsilon,t,0);
     flowtime += dclock() - tvar;
     node0_printf("ksi %g ", t-epsilon);
 
@@ -80,11 +80,14 @@ void fermion_flow_imp() {
     node0_printf("\n");
 
     t -= epsilon;
-    tvar1 = dclock();
+    //tvar1 = dclock();
     //yep = fmeas_link(F_OFFSET(chi),F_OFFSET(W0), F_OFFSET(psi), mass);
-    ttime += dclock() - tvar1;
+    //ttime += dclock() - tvar1;
     node0_printf("\n\n");
   }
+	tvar1 = dclock();
+  yep = fmeas_link(F_OFFSET(chi),F_OFFSET(link0), F_OFFSET(psi), mass);
+	ttime += dclock() - tvar1;
   node0_printf("\nEND FERMION ADJOINT FLOW\n\n");
 
   node0_printf("total flow time = %f\n",flowtime);

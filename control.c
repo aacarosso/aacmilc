@@ -36,10 +36,8 @@ int main(int argc, char **argv) {
   node0_printf("\nPERIODIC BC in time direction\n");
 #endif
 	//-------------------------------------------------------------------
-  complex plp;
-  plp = fploop(F_OFFSET(link),3);
-  node0_printf("plp(linkstart) = %.5g  %.5g\n",plp.real,plp.imag);
 	
+	// copy t = 0 link into link0
 	for (dir = 0; dir < 4; dir++){
 		FORALLSITES(i,s){
 			su3mat_copy(&(s->link[dir]), &(s->link0[dir]));
@@ -53,105 +51,6 @@ int main(int argc, char **argv) {
 
 	fermion_flow_geom8();
 
-	// Test variable epsilon gauge flow
-	int num_eps = 0;
-/*
-	double *eps = wflow_imp_epsvals_series(F_OFFSET(link0), 0, tmax, 1);
-	double t_epsmax=0, eps_max=0.1, cut = 1e-7;
-	for (yep = 0; yep < (int)(tmax/epsilon)-1 && eps[yep] != 0; yep++){
-		node0_printf("%g\n",eps[yep]);
-		if (eps[yep] > cut) { num_eps += 1;}
-		if (eps[yep] < eps_max-cut && eps[yep-1] <= eps_max - cut ){ t_epsmax += eps[yep]; }
-	}
-	node0_printf("num_eps = %d t_epsmax = %g\n", num_eps, t_epsmax);
-	double dt = eps_max*floor((tmax - t_epsmax)/(eps_max*(nsave - 1)));
-	
-	double ts = 8*eps_max*floor((tmax - t_epsmax - eps[num_eps-1])/(8*eps_max));
-	double times[3]={t_epsmax + (1.0/8)*ts, t_epsmax+(2.0/8)*ts,t_epsmax+(3.0/8)*ts};
-	int size = sizeof(times)/sizeof(times[0]);
-	node0_printf("ts = %g times[0] = %g size = %d\n",ts, times[0],size);
-	wflow_imp_saves(eps_max, F_OFFSET(link1), t_epsmax,
-		t_epsmax + (4.0/8)*ts, times, size);
-
-	fermion_flow_chunk(F_OFFSET(link0)+3*4*sizeof(su3_matrix), 3.02, 4.12, eps_max);
-*/
-  // Check ploops
-  //plp = fploop(F_OFFSET(link),3);
-  //node0_printf("plp(linkmax) = %.5g  %.5g\n",plp.real,plp.imag);
-/*  
-	// Adjoint Flow
-
-	// Fixed epsilon flow
-	fermion_flow();
-
-  // generate npbp random fields at tmax
-  t = 0;//change to tmax for adj flow
-  int ksi, n, j, l=nsave-2;
-	double flowtime = 0, sum_eps, ttime=0, tvar, tvar1;
-	Real ti, cut = 1e-7, counter = 0;
-  complex dot1, dot2;
-  node0_printf("ksi %g ",t);
-  for (n=0; n<npbp; n++){
-    grsourcen(EVENANDODD);
-    ksi = F_OFFSET(ksi1) + n*sizeof(su3_vector);
-    copy_latvec(F_OFFSET(g_rand), ksi, EVENANDODD);
-    dot1 = dot_su3_latvec(ksi, ksi, EVENANDODD);
-    node0_printf("%.10g  ", dot1.real);
-  }
-  //yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
-	//node0_printf("fmeas_link time = %f\n",dclock()-ttime);
-	//ttime = dclock() - ttime;
-
-  node0_printf("\n");
-
-  node0_printf("\nBEGIN FERMION ADJOINT FLOW\n\n");
-	j = num_eps-1;
-	sum_eps = eps[j];
-  for (istep = 0; t > cut; istep++){
-		// set wflow_imp ti
-		if (pow(t - (tmax - sum_eps),2) < cut){
-			j -= 1;
-			sum_eps += eps[j];
-		}
-		node0_printf(" j = %d sum_eps = %g l = %d\n", j, sum_eps, l);
-		// adjust checkpoint for gauge field
-		if (pow(t - (t_epsmax +l*dt),2) < cut ) l -= 1;
-    // flow gauge fields to t, obtain W's
-		tvar = dclock();
-		if (t - t_epsmax > cut){
-			//node0_printf("IMPROV1: ti = t_epsmax+l*dt = %g tf = %g\n", t_epsmax+l*dt, tmax-sum_eps);
-			wflow_imp(eps_max,F_OFFSET(link1)+4*l*sizeof(su3_matrix), t_epsmax+l*dt, tmax-sum_eps);
-		}
-		else {
-			//node0_printf("IMPROV2: ti = 0 tf = %g\n",tmax-sum_eps);
-			wflow_imp(epsilon,F_OFFSET(link0), 0, tmax-sum_eps);
-		}
-		//node0_printf("FIXED: ti = %g tf = %g\n",tmax-sum_eps,t);
-		wflow(F_OFFSET(link),tmax-sum_eps,t,0);
-		flowtime += dclock() - tvar;
-    node0_printf("ksi %g ", t-epsilon);
-    // loop over npbp fields
-    for (n=0; n<npbp; n++){
-      ksi = F_OFFSET(ksi1) + n*sizeof(su3_vector);
-      copy_latvec(ksi, F_OFFSET(lambda3), EVENANDODD);
-      fermion_adjointstep(F_OFFSET(lambda3), epsilon);
-      copy_latvec(F_OFFSET(lambda0), ksi, EVENANDODD);
-      dot1 = dot_su3_latvec(ksi, ksi, EVENANDODD);
-      node0_printf("%.10g  ", dot1.real);
-    }
-    node0_printf("\n");
-		t -= epsilon;
-		tvar1 = dclock();
-		yep = fmeas_link(F_OFFSET(chi),F_OFFSET(W0), F_OFFSET(psi), mass);
-		ttime += dclock() - tvar1;
-    node0_printf("\n\n");
-  }
-
-  node0_printf("\nEND FERMION ADJOINT FLOW\n\n");
- 
-  node0_printf("total flow time = %f\n",flowtime);
-	node0_printf("meas_link total time = %f\n",ttime);
-*/
 	//-------------------------------------------------------------------
   rephase(ON);  
 

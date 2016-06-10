@@ -1,7 +1,7 @@
 // ------------------------------------------------------------------
-// Flows link to tf given some U(ti) with offset off.
-// if argument savelink = 1, it saves nsave configurations along the way.
-// also saves the W's obtained in the last step.
+// Flows link to tf given some U(ti) with offset "off".
+// If argument savelink = 1, it saves nsave configurations equally spaced.
+// Always saves the W's obtained in the last step, for fermion flow.
 // nsave must be consistent with the number of fields link0,1,2,3,... in lattice.h
 
 #include "wflow_includes.h"
@@ -32,11 +32,10 @@ void wflow(field_offset off, Real ti, Real tf, int savelink) {
 		}
 	}
   
-	node0_printf("tf = %g  ti = %g\n",tf,ti);
-  node0_printf("BEGIN WILSON FLOW\n");
+  node0_printf("BEGIN WILSON FLOW (FIX) tf = %g  ti = %g\n", tf, ti);
 	
 	if ((savelink == 1) && (ti < cut)){
-		node0_printf("saving t = 0 configuration (1 of %d)\n",nsave);
+		node0_printf("saving t = 0 configuration (1 of %d)\n", nsave);
 		for (dir = 0; dir < 4; dir ++){
 			FORALLSITES(i,s){
 	  	  su3mat_copy(&(s->link[dir]),
@@ -49,14 +48,14 @@ void wflow(field_offset off, Real ti, Real tf, int savelink) {
 	t = ti;
   for (step = 0; fabs(t) < fabs(tf) - fabs(epsilon)/2; step++){
 	  // save W?
-    //if ( pow((t+epsilon-tf),2) < cut){ last = 1;}
+    if ( pow((t+epsilon-tf),2) < cut){ last = 1;}
     
 		fstout_step_rk(S, A, epsilon, last);
 		t += epsilon;
 
 		// save link?
-		if ((savelink == 1) && (k < nsave) && (pow(t/epsilon + 1 - N*k,2) < cut )){
-		  node0_printf("saving t = %g configuration (%d of %d)\n", t+epsilon, k+1,nsave);
+		if ((savelink == 1) && (k < nsave) && (pow(t/epsilon - N*k,2) < cut )){
+		  node0_printf("saving t = %g configuration (%d of %d)\n", t, k+1,nsave);
 			for (dir = 0; dir < 4; dir ++){
 			  FORALLSITES(i,s){
 			    su3mat_copy(&(s->link[dir]),
@@ -113,7 +112,7 @@ void wflow(field_offset off, Real ti, Real tf, int savelink) {
     d_plaquette(&ssplaq, &stplaq);
     td = (ssplaq + stplaq) / 2;
     check = 12 * t * t * (3 - td);
-    node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
+    //node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
     last = 0;
   }
   node0_printf("END WILSON FLOW\n");

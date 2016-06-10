@@ -30,10 +30,10 @@ void fermion_flow_chunk(field_offset off, double ti, double tf, double eps)
 
     // flow gauge fields to t, obtain W's
     tvar = dclock();
-    wflow_imp(eps_max, off, ti, ti + j*eps_max);
-    //wflow_imp(eps, off, ti, t - epsilon);
-    wflow(F_OFFSET(link), ti + j*eps_max, t, 0);
-    //wflow(F_OFFSET(link), t - epsilon, t, 0);
+    //wflow_imp(eps_max, off, ti, ti + j*eps_max);
+    wflow_imp(eps, off, ti, t - epsilon);
+    //wflow(F_OFFSET(link), ti + j*eps_max, t, 0);
+    wflow(F_OFFSET(link), t - epsilon, t, 0);
     flowtime += dclock() - tvar;
 
     // loop over npbp fields
@@ -48,14 +48,18 @@ void fermion_flow_chunk(field_offset off, double ti, double tf, double eps)
     }
     node0_printf("\n");
     t -= epsilon;
-    tvar1 = dclock();
+  //  tvar1 = dclock();
    // yep = fmeas_link(F_OFFSET(chi),F_OFFSET(W0), F_OFFSET(psi), mass);
-    ttime += dclock() - tvar1;
+  //  ttime += dclock() - tvar1;
     node0_printf("\n");
   }
   node0_printf("\nEND FERMION CHUNK FLOW\n");
+    
+	//tvar1 = dclock();
+  //yep = fmeas_link(F_OFFSET(chi),F_OFFSET(link0), F_OFFSET(psi), mass);
+  //ttime += dclock() - tvar1;
 
-  //node0_printf("total flow time = %f\n",flowtime);
-  //node0_printf("meas_link total time = %f\n",ttime);
+  node0_printf("total flow time = %f\n",flowtime);
+  node0_printf("meas_link total time = %f\n",ttime);
 	return;
 }

@@ -5,6 +5,8 @@
 
 void fermion_flow_geom8()
 {
+	register int i;
+	register site *s;
 	int yep, dir, ksi, n, j, num_eps=0;
   double t_epsmax=0, eps_max=0.1, *eps, flowtime=0, sum_eps, ttime=0, tvar, tvar1;
   Real t, cut = 1e-7;
@@ -30,7 +32,28 @@ void fermion_flow_geom8()
     dot1 = dot_su3_latvec(ksi, ksi, EVENANDODD);
     node0_printf("%.10g  ", dot1.real);
   }
+	
+	// pbp with rand fermions and linkmax
+	rephase(ON);
+	block_and_fatten();
+  yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
+	rephase(OFF);
+	// pbp with rand fermions and link0
+  for (dir = 0; dir < 4; dir++){
+    FORALLSITES(i,s){
+      su3mat_copy(&(s->link0[dir]), &(s->link[dir]));
+    }
+  }
+	rephase(ON);
+  //yep = meas_link(F_OFFSET(chi), F_OFFSET(psi), mass);
   //yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
+	block_and_fatten();
+  //yep = meas_link(F_OFFSET(chi), F_OFFSET(psi), mass);
+  yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
+	rephase(OFF);
+	double p1, p2;
+	d_plaquette(&p1, &p2);
+	node0_printf("p1 = %g p2 = %g\n", p1, p2);
 
   node0_printf("\n");
 	
@@ -70,7 +93,18 @@ void fermion_flow_geom8()
 	// t < t_epsmax REGIME
 	fermion_flow_chunk(F_OFFSET(link0), 0, t_epsmax, epsilon);
 
-  node0_printf("\nEND FERMION ADJOINT FLOW\n\n");
+	// pbp with t = 0 fermions and link0
+  for (dir = 0; dir < 4; dir++){
+    FORALLSITES(i,s){
+      su3mat_copy(&(s->link0[dir]), &(s->link[dir]));
+    }
+  }
+	rephase(ON);
+	block_and_fatten();
+  yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
+	rephase(OFF);
+  
+	node0_printf("\nEND FERMION ADJOINT FLOW\n\n");
 
   node0_printf("total flow time = %f\n",flowtime);
   node0_printf("meas_link total time = %f\n",ttime);
