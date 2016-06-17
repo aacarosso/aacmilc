@@ -14,8 +14,8 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
   int last=0, step;
 	Real k, l=eps/epsilon, dl;
   Real t=ti, cut = 1e-7, eps_max = 0.1;
-  double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
-	double E0, td0, topo0;//, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
+  double E, old_value=0, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
+	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
 	complex tc;
   su3_matrix t_mat, *S[4];
@@ -33,7 +33,58 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 			su3mat_copy((su3_matrix *)F_PT(s, off+dir*sizeof(su3_matrix)), &(s->link[dir]));
 		}
 	}
+
+	// Must calculate t^2*E at ti (for interpolation) !
+
+	// Finds 8F_munu = sum_{clover} (U - Udag)
+  // Subtracts the (lattice artifact?) trace at each lattice site
+	make_field_strength(F_OFFSET(link), F_OFFSET(fieldstrength));
+
+	// The variables necessary for scale setting: used if tmax==0 only
+	E = 0;
+	FORALLSITES(i, s) {
+		for (dir = 0; dir < 6; dir++) {
+			mult_su3_nn(&(s->fieldstrength[dir]),
+	                &(s->fieldstrength[dir]), &t_mat);
+      tc = trace_su3(&t_mat);
+      E -= (double)tc.real;
+    }
+  }
+  g_doublesum(&E);
+  E /= (volume * 64); // Normalization factor of 1/8 for each F_munu
+  new_value = t * t * E;
+  der_value = fabs(t) * (new_value - old_value) / fabs(eps); // nonsensical
+	
+	// Might as well extract topology
+	topo = 0;
+  FORALLSITES(i, s) {
+    mult_su3_nn(&(s->fieldstrength[0]), // XYZT
+                &(s->fieldstrength[5]), &t_mat);
+    tc = trace_su3(&t_mat);
+    topo -= (double)tc.real;
+
+    mult_su3_nn(&(s->fieldstrength[3]), // XTYZ
+                &(s->fieldstrength[2]), &t_mat);
+    tc = trace_su3(&t_mat);
+    topo -= (double)tc.real;
+
+    mult_su3_na(&(s->fieldstrength[1]), // XZTY;  TY=(YT)^dag
+                &(s->fieldstrength[4]), &t_mat);
+    tc = trace_su3(&t_mat);
+    topo -= (double)tc.real;
+  }
+  g_doublesum(&topo);
+  // Same normalization
+  topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
+
+  // Check with plaquette
+  d_plaquette(&ssplaq, &stplaq);
+  td = (ssplaq + stplaq) / 2;
+  check = 12 * t * t * (3 - td);
   
+	// Don't want to print these, assuming WFLOW at ti has already been calculated elsewhere.
+	//node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
+
 	node0_printf("BEGIN WILSON FLOW (IMP) tf = %g  ti = %g\n",tf,ti);
 	
   d_plaquette(&Ps1, &Pt1);
@@ -98,7 +149,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
     d_plaquette(&ssplaq, &stplaq);
     td = (ssplaq + stplaq) / 2;
     check = 12 * t * t * (3 - td);
-/*
+
 		// Interpolate between eps steps
 		if ( eps > epsilon ){
 			//slope_E = (E - E0)/eps;
@@ -107,7 +158,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 			slope_topo = (topo - topo0)/eps;
 			tk = t - eps;
 			new_valuek = tk*tk*E0;
-			for (k = 1; k < l-0.01; k++){
+			for (k = 1; k < l - cut; k++){
 			  old_valuek = new_valuek;
 				tk = t - eps + k*epsilon;
 				//Ek = slope_E*(k*epsilon) + E0;
@@ -118,12 +169,12 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 				//new_valuek = tk*tk*Ek;
 				Ek = new_valuek/(tk*tk);
 				der_valuek = tk*(new_valuek - old_valuek)/epsilon;
-				//node0_printf("WFLOW %g %g %g %g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
-				  //            der_valuek, checkk, topok);
+				node0_printf("WFLOW %g %g %g %g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
+				              der_valuek, checkk, topok);
 			}
 		}
-*/
-    //node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
+
+    node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
 		
 		// Setting epsilon
 		d_plaquette(&Ps2, &Pt2);
@@ -157,7 +208,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 		// Don't shoot past tmax
 		if (t + eps > tf){
 			eps = tf - t;
-			l = 100*eps/(100*epsilon);
+			l = eps/epsilon;
 			//node0_printf(" eps %g l %g\n", eps, l);
 		}
 

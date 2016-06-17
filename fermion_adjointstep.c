@@ -7,8 +7,7 @@
 //-------------------------------------------------------------------
 
 
-void fermion_adjointstep(field_offset flow_vec){
-  Real eps = epsilon;
+void fermion_adjointstep(field_offset flow_vec, double eps){
   register int i;
   register site *s;
   int j, off[4];

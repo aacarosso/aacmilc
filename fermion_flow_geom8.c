@@ -15,7 +15,7 @@ void fermion_flow_geom8()
 	node0_printf("\n\nFERMION_FLOW_GEOM8\n\n");
 
 	// flow gauge fields to tmax and determine eps values
-  eps = wflow_imp_epsvals_geom8(F_OFFSET(link0), 0, tmax, 1);
+  eps = wflow_imp_epsvals_geom8(F_OFFSET(link0), 1);
   for (yep = 0; yep < (int)(tmax/epsilon)-1 && eps[yep] != 0; yep++){
     node0_printf("%g\n",eps[yep]);
     if (eps[yep] > cut) { num_eps += 1;}

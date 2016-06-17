@@ -27,7 +27,6 @@ int fmeas_link(field_offset chi_off, field_offset W, field_offset psi_off, Real 
   for (dir=XUP ; dir <= TUP; dir++){
     W_off[dir] = W + dir*sizeof(su3_matrix);
   }
-  FILE *data = fopen("flow_data.txt","a");
 
   ave_e = dcmplx(0, 0);
   ave_o = dcmplx(0, 0);
@@ -39,26 +38,27 @@ int fmeas_link(field_offset chi_off, field_offset W, field_offset psi_off, Real 
     pbp_e = dcmplx(0, 0);
     pbp_o = dcmplx(0, 0);
     // Take back-flowed source ksi and do inversion
-    // chi = Mdag lambda0; psi = M^{-1} lambda0
+    // chi = Mdag ksi; psi = M^{-1} lambda0
     fdslash(ksi, W, chi_off, EVENANDODD);
     scalar_mult_latvec(chi_off, -1.0, chi_off, EVENANDODD);
     scalar_mult_add_latvec(chi_off, ksi, 2.0*mass, chi_off, EVENANDODD);
     clear_latvec(psi_off, EVENANDODD);
 //    miters = mat_invert_uml(F_OFFSET(g_rand), psi_off, chi_off, mass);
     // Adapted from mat_invert.c "preconditioning": chi <- M^dag * g_rand
-    fdslash(ksi, W, F_OFFSET(ttt1[0]), EVENANDODD);
-    scalar_mult_add_latvec(F_OFFSET(ttt1[0]), ksi,
-                           -2.0 * mass, chi_off, EVENANDODD);
-    scalar_mult_latvec(chi_off, -1.0, chi_off, EVENANDODD);
-    miters = fks_congrad(chi_off, W, psi_off, mass, EVENANDODD);
+   // fdslash(ksi, W, F_OFFSET(ttt1[0]), EVENANDODD);
+   // scalar_mult_add_latvec(F_OFFSET(ttt1[0]), ksi,
+   //                        -2.0 * mass, chi_off, EVENANDODD);
+   // scalar_mult_latvec(chi_off, -1.0, chi_off, EVENANDODD);
+    //miters = fks_congrad(chi_off, W, psi_off, mass, EVENANDODD);
+    miters = ks_congrad(chi_off, psi_off, mass, EVENANDODD);
     tot_iters += miters;
    
     // Fermion action = chi.psi
     // pbp on even sites = g_rand.psi
     FOREVENSITES(i, s) {
-      cc = su3_dot((su3_vector *)F_PT(s, chi_off),
-                   (su3_vector *)F_PT(s, psi_off));
-      faction += cc.real;
+     // cc = su3_dot((su3_vector *)F_PT(s, chi_off),
+       //            (su3_vector *)F_PT(s, psi_off));
+     // faction += cc.real;
       cc = su3_dot((su3_vector *)F_PT(s,ksi), (su3_vector *)F_PT(s, psi_off));
       CSUM(pbp_e, cc);
     }
@@ -140,7 +140,6 @@ int fmeas_link(field_offset chi_off, field_offset W, field_offset psi_off, Real 
     node0_printf("mass %.4g, %.8g %.8g %.8g %.8g ( %d of %d ) %d\n",
                    mass, r_pbp_even, r_pbp_odd, i_pbp_even, i_pbp_odd,
                    jpbp_reps + 1, npbp, miters);
-  //  fprintf(data,"%g %g\n",r_pbp_even,r_pbp_odd);
   
     g_doublesum(&faction);
     node0_printf(" FACTION: mass = %.4g, %.8g ( %d of %d )\n",
@@ -158,7 +157,7 @@ int fmeas_link(field_offset chi_off, field_offset W, field_offset psi_off, Real 
       scalar_mult_add_latvec(F_OFFSET(ttt1[0]), F_OFFSET(M_inv),
                              -2.0 * mass, chi_off, EVENANDODD);
       scalar_mult_latvec(chi_off, -1.0, chi_off, EVENANDODD);
-      miters = fks_congrad(chi_off, W, psi_off, mass, EVENANDODD);
+      miters = ks_congrad(chi_off, psi_off, mass, EVENANDODD);
       FORALLSITES(i, s) {
         cc = su3_dot((su3_vector *)F_PT(s, ksi), (su3_vector *)F_PT(s, psi_off));
         pbp_pbp += cc.real;
@@ -178,8 +177,6 @@ int fmeas_link(field_offset chi_off, field_offset W, field_offset psi_off, Real 
   i_pbp_odd = ave_o.imag * (2 / ((double)volume*npbp));
   node0_printf("mass %.4g, %.8g %.8g %.8g %.8g ( ave over %d )\n",
                  mass, r_pbp_even, r_pbp_odd, i_pbp_even, i_pbp_odd, npbp);
-  fprintf(data,"%g %g %g %g", r_pbp_even, r_pbp_odd, i_pbp_even, i_pbp_odd);
-  fclose(data);
   return tot_iters;
 }
 // -----------------------------------------------------------------

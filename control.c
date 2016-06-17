@@ -36,7 +36,11 @@ int main(int argc, char **argv) {
   node0_printf("\nPERIODIC BC in time direction\n");
 #endif
 	//-------------------------------------------------------------------
-	
+		
+	//rephase(ON);
+	//block_and_fatten();
+	//rephase(OFF);
+	//node0_printf("BLOCKED link0 !\n");
 	// copy t = 0 link into link0
 	for (dir = 0; dir < 4; dir++){
 		FORALLSITES(i,s){
@@ -44,8 +48,15 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	//double *eps;
+	//eps = wflow_imp_epsvals_geom8(F_OFFSET(link0), 1);
+
+	//wflow_imp(0.1, F_OFFSET(link2), 5.42, tmax);
+
   // Flow to time tmax and save nsave configurations along the way
   //wflow(F_OFFSET(link), 0.0, tmax, 1);
+
+	//wflow_imp(1*epsilon, F_OFFSET(link0), 0, tmax);
 
 	//fermion_flow_imp();
 

@@ -1,8 +1,6 @@
 // -----------------------------------------------------------------
 // Construct a gaussian random vector g_rand
 
-// AAC: can't find grsource.c so just stripped grsourse_imp.c 
-
 // g_rand must always be computed at all sites
 // It is never used directly, so we can overwrite it for each level
 // The parity is where dest is computed: EVEN, ODD or EVENANDODD

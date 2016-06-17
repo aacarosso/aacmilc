@@ -126,7 +126,7 @@ void fstout_step_rk(su3_matrix *S[4], anti_hermitmat *A[4], double eps, int last
   register site *s;
   su3_matrix *link;
 
-  if (last == 1){printf("LAST ");}
+  //if (last == 1){node0_printf("LAST ");}
   
   // Clear A, just in case
   FORALLSITES(i, s) {

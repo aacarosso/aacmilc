@@ -7,7 +7,7 @@
 //		t = 0 in link0
 //		t = t_epsmax in link1
 //		nsave-2 configurations according to geometric checkpoint method.
-// Saves the W's obtained in the last step.
+// Saves the W's obtained in the last step (not necessary for pure gauge flow).
 // nsave must be consistent with the number of fields link0,1,2,3,... in lattice.h
 
 // Returns an arrray pointer containing all eps values in succession.
@@ -16,14 +16,14 @@
 //-------------------------------------------------------------------
 
 //-------------------------------------------------------------------
-double *wflow_imp_epsvals_geom8(field_offset off, Real ti, Real tf, int savelink) {
+double *wflow_imp_epsvals_geom8(field_offset off, int savelink) {
   register int dir, i;
 	register site *s;
   int last=0, step, k=0, j=0;
 	Real l=1, dt, t_epsmax=100;
-  Real t=ti, cut = 1e-7, eps_max = 0.1, eps = epsilon;
+  Real t=0, cut = 1e-7, eps_max = 0.1, eps = epsilon;
   double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
-	double E0, td0, topo0;//, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
+	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
 	double *epsilons = (double *)malloc((int)(tmax/epsilon)*sizeof(double));
 	complex tc;
@@ -43,9 +43,9 @@ double *wflow_imp_epsvals_geom8(field_offset off, Real ti, Real tf, int savelink
 		}
 	}
   
-	node0_printf("BEGIN WILSON FLOW (IMP) tf = %g  ti = %g\n", tf, ti);
+	node0_printf("BEGIN WILSON FLOW (IMP SAVES) tf = %g  ti = %g\n", tmax, 0);
 	
-	if ((savelink == 1) && (ti < cut)){
+	if ((savelink == 1)){
 		node0_printf("saving t = 0 configuration (1 of %d)\n",nsave);
 		for (dir = 0; dir < 4; dir ++){
 			FORALLSITES(i,s){
@@ -59,17 +59,17 @@ double *wflow_imp_epsvals_geom8(field_offset off, Real ti, Real tf, int savelink
 	
 	double mult, f[4] = {0, 0.5, 0.75, 0.875};
 	// Wilson flow!
-  for (step = 0; fabs(t) < fabs(tf) - fabs(epsilon)/2; step++){
+  for (step = 0; fabs(t) < fabs(tmax) - fabs(epsilon)/2; step++){
 		// Save W?
-		if ( pow((t+eps-tf),2) < cut){ last = 1;}
+		if ( pow((t+eps-tmax),2) < cut){ last = 1;}
 		
 		// Save nsave fields in eps_max phase
 		if (savelink == 1 && pow(eps - eps_max,2) < cut && pow(epsilons[step-1] - eps_max,2) > cut){
 			dt = eps_max*floor((tmax - t)/(eps_max*(nsave - 1)));
 			t_epsmax = t;
 			node0_printf(" t_epsmax = %g dt = %g ", t_epsmax, dt);
-			mult = floor((tf - t_epsmax )/(eps_max*8));
-			node0_printf("mult = %f\n",mult);
+			mult = floor((tmax - t_epsmax )/(eps_max*8));
+			node0_printf("mult = %f\n", mult);
 
 		}
 		if (savelink == 1 && pow(t - t_epsmax - f[j]*mult*8*eps_max,2) < cut && j < nsave - 1){
@@ -196,9 +196,9 @@ double *wflow_imp_epsvals_geom8(field_offset off, Real ti, Real tf, int savelink
 		Pt1 = Pt2;
 	
 		// Don't shoot past tmax
-		if (t + eps > tf){
-			eps = tf - t;
-			l = 100*eps/(100*epsilon);
+		if (t + eps > tmax){
+			eps = tmax - t;
+			l = eps/epsilon;
 			//node0_printf(" eps %g l %g\n", eps, l);
 		}
 
@@ -213,6 +213,7 @@ double *wflow_imp_epsvals_geom8(field_offset off, Real ti, Real tf, int savelink
 
 	// fill the rest of eps array with zeroes
 	for (step = step; step < (int)(tmax/epsilon)-1; step++) epsilons[step] = 0;
+
 	return epsilons;
 }
 
