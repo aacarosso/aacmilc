@@ -47,24 +47,23 @@ int main(int argc, char **argv) {
 			su3mat_copy(&(s->link[dir]), &(s->link0[dir]));
 		}
 	}
-
+/*
   int num_eps = 0, num_tepsmax = 0; 
   double *eps, t_epsmax = 0, cut = 1e-7, eps_max = 0.15; 
   eps = wflow_imp_epsvals_geom8(F_OFFSET(link0), 1); 
 
   for (yep = 0; yep < (int)(tmax/epsilon)-1 && eps[yep] != 0; yep++){ 
-    node0_printf("%g\n",eps[yep]); 
+    node0_printf("eps[%d] = %g\n", yep, eps[yep]); 
     if (eps[yep] > cut) { num_eps += 1;} 
     if (eps[yep] < eps_max-cut && eps[yep-1] <= eps_max - cut ){ 
       t_epsmax += eps[yep]; 
       num_tepsmax += 1; 
     } 
   } 
-  node0_printf("num_eps = %d t_epsmax = %g num_tepsmax = %g\n", num_eps, t_epsmax, num_tepsmax); 
+  node0_printf("num_eps = %d t_epsmax = %g num_tepsmax = %d\n", num_eps, t_epsmax, num_tepsmax); 
 
-  int j = num_tepsmax-1; 
-  double sd = floor(num_tepsmax/nsave), S = sum_eps(eps,4); 
-  node0_printf("sd = %g\n", sd); 
+  int j = num_tepsmax, sd = (int)floor(num_tepsmax/nsave); 
+  node0_printf("sd = %d\n", sd); 
   for ( i = 0; i <= num_eps; i++){ 
     node0_printf("sum_eps(%d) = %f\n",i,sum_eps(eps,i)); 
   } 
@@ -74,12 +73,13 @@ int main(int argc, char **argv) {
     node0_printf("saves[%d] = %g\n", i, saves[i]); 
   } 
   wflow_imp_saves(epsilon, F_OFFSET(link0), 0, t_epsmax, saves, nsave); 
-  //for (i = nsave-1; i >= 0; i--){ 
-  //  fermion_flow_chunk(F_OFFSET(link0)+i*4*sizeof(su3_matrix), sum_eps(eps, i*s), 
-  //    sum_eps(eps, j), eps[i*s]); 
-  //  j = i*s; 
-  //} 
-
+  for (i = nsave-1; i >= 0; i--){
+		node0_printf("sum_eps(%d*sd) = %g, eps[%d*sd] = %g\n",i,sum_eps(eps,i*sd),i,eps[i*sd]);
+    //fermion_flow_chunk(F_OFFSET(link0)+i*4*sizeof(su3_matrix), sum_eps(eps, i*sd), 
+    //  sum_eps(eps, j), eps[i*sd]); 
+    j = i*sd; 
+  } 
+*/
 	//double *eps;
 	//eps = wflow_imp_epsvals_geom8(F_OFFSET(link0), 1);
 
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 
 	//fermion_flow_imp();
 
-	//fermion_flow_geom8();
+	fermion_flow_geom8();
 
 	//-------------------------------------------------------------------
   rephase(ON);  

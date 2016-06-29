@@ -10,7 +10,7 @@ void fermion_flow_chunk(field_offset off, double ti, double tf, double eps)
 	register int i;
 	register site *s;
 	int istep, dir, ksi, n;
-  double eps_max=0.1, flowtime=0, sum_eps, ttime=0, tvar, tvar1;
+  double eps_max=0.15, flowtime=0, sum_eps, ttime=0, tvar, tvar1;
   Real t = tf, cut = 1e-7, counter = 0;
   complex dot1, dot2;
 
@@ -60,6 +60,6 @@ void fermion_flow_chunk(field_offset off, double ti, double tf, double eps)
   //ttime += dclock() - tvar1;
 
   node0_printf("total flow time = %f\n",flowtime);
-  node0_printf("meas_link total time = %f\n",ttime);
+  //node0_printf("meas_link total time = %f\n",ttime);
 	return;
 }

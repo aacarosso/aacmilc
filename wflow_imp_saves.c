@@ -17,7 +17,7 @@ void wflow_imp_saves(double eps, field_offset off, Real ti, Real tf, double *tim
 	register site *s;
   int last=0, step, k=0, j=0;
 	Real l=eps/epsilon, dt, t_epsmax=100;
-  Real t=ti, cut = 1e-7, eps_max = 0.1;
+  Real t=ti, cut = 1e-7, eps_max = 0.15;
   double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
 	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;

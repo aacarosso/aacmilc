@@ -13,7 +13,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 	register site *s;
   int last=0, step;
 	Real k, l=eps/epsilon, dl;
-  Real t=ti, cut = 1e-7, eps_max = 0.1;
+  Real t=ti, cut = 1e-7, eps_max = 0.15;
   double E, old_value=0, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
 	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
@@ -88,6 +88,12 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 	node0_printf("BEGIN WILSON FLOW (IMP) tf = %g  ti = %g\n",tf,ti);
 	
   d_plaquette(&Ps1, &Pt1);
+
+	// In case tf-ti < eps, don't shoot past tf
+	if (t + eps > tf){
+		eps = tf - t;
+		l = eps/epsilon;
+	}
 
 	// Wilson flow!
   for (step = 0; fabs(t) < fabs(tf) - fabs(epsilon)/2; step++){
@@ -169,8 +175,8 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 				//new_valuek = tk*tk*Ek;
 				Ek = new_valuek/(tk*tk);
 				der_valuek = tk*(new_valuek - old_valuek)/epsilon;
-				node0_printf("WFLOW %g %g %g %g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
-				              der_valuek, checkk, topok);
+				//node0_printf("WFLOW %g %g %g %g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
+				//              der_valuek, checkk, topok);
 			}
 		}
 
@@ -185,7 +191,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 		}
 		eps = eta/dS;
 		//node0_printf(" eta/dS %g", eps);
-		dl = floor(100*eps)/(epsilon*100) - l;
+		//dl = floor(100*eps)/(epsilon*100) - l;
 		if (eps < (l+0.99)*epsilon){
 			eps = l*epsilon;
 		}

@@ -21,7 +21,7 @@ double *wflow_imp_epsvals_geom8(field_offset off, int savelink) {
 	register site *s;
   int last=0, step, k=0, j=0;
 	Real l=1, dt, t_epsmax=100;
-  Real t=0, cut = 1e-7, eps_max = 0.1, eps = epsilon;
+  Real t=0, cut = 1e-7, eps_max = 0.15, eps = epsilon;
   double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
 	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
@@ -43,8 +43,8 @@ double *wflow_imp_epsvals_geom8(field_offset off, int savelink) {
 		}
 	}
   
-	node0_printf("BEGIN WILSON FLOW (IMP SAVES) tf = %g  ti = %g\n", tmax, 0);
-	
+	node0_printf("BEGIN WILSON FLOW (IMP SAVES) tf = %g  ti = %g\n", tmax, 0.0);
+/*	
 	if ((savelink == 1)){
 		node0_printf("saving t = 0 configuration (1 of %d)\n",nsave);
 		for (dir = 0; dir < 4; dir ++){
@@ -54,7 +54,7 @@ double *wflow_imp_epsvals_geom8(field_offset off, int savelink) {
 			}
   	}
   }
-  
+ */
   d_plaquette(&Ps1, &Pt1);
 	
 	double mult, f[4] = {0, 0.5, 0.75, 0.875};
