@@ -11,13 +11,14 @@
 //-------------------------------------------------------------------
 
 //-------------------------------------------------------------------
-void wflow_imp_saves(double eps, field_offset off, Real ti, Real tf, double *times, int size)
+void wflow_imp_saves(double eps, field_offset off, Real ti, Real tf, double *times, int size,
+											double eps_max)
 {
   register int dir, i;
 	register site *s;
   int last=0, step, k=0, j=0;
 	Real l=eps/epsilon, dt, t_epsmax=100;
-  Real t=ti, cut = 1e-7, eps_max = 0.15;
+  Real t=ti, cut = 1e-7;
   double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
 	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
@@ -108,7 +109,8 @@ void wflow_imp_saves(double eps, field_offset off, Real ti, Real tf, double *tim
     }
     g_doublesum(&topo);
     // Same normalization
-    topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
+		topo *= 0.02533029591058444286/64;
+    //topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
 
     // Check with plaquette
     d_plaquette(&ssplaq, &stplaq);

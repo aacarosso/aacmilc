@@ -16,12 +16,12 @@
 //-------------------------------------------------------------------
 
 //-------------------------------------------------------------------
-double *wflow_imp_epsvals_geom8(field_offset off, int savelink) {
+double *wflow_imp_epsvals_geom8(field_offset off, int savelink, double eps_max) {
   register int dir, i;
 	register site *s;
   int last=0, step, k=0, j=0;
 	Real l=1, dt, t_epsmax=100;
-  Real t=0, cut = 1e-7, eps_max = 0.15, eps = epsilon;
+  Real t=0, cut = 1e-7, eps = epsilon;
   double E, old_value, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
 	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
@@ -77,7 +77,7 @@ double *wflow_imp_epsvals_geom8(field_offset off, int savelink) {
 			for (dir = 0; dir < 4; dir ++){
 				FORALLSITES(i,s){
 	  		  su3mat_copy(&(s->link[dir]),
-						(su3_matrix *)F_PT(s, F_OFFSET(link1) + (4*j+dir)*sizeof(su3_matrix)));
+						(su3_matrix *)F_PT(s, F_OFFSET(link0) + (4*(j+1)+dir)*sizeof(su3_matrix)));
 				}
   		}
 			j += 1;
@@ -133,7 +133,8 @@ double *wflow_imp_epsvals_geom8(field_offset off, int savelink) {
     }
     g_doublesum(&topo);
     // Same normalization
-    topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
+		topo *= 0.02533029591058444286/64;
+    //topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
 
     // Check with plaquette
     d_plaquette(&ssplaq, &stplaq);

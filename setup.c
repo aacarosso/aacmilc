@@ -32,10 +32,8 @@ int setup() {
   make_fields();
   // Set up staggered phase vectors, boundary conditions
   phaseset();
-  // copied-----start
   // Allocate space for temporary su3_matrix field
   FIELD_ALLOC(tempmat1, su3_matrix);
-  // copied -------end
   return prompt;
 }
 // -----------------------------------------------------------------
@@ -48,9 +46,7 @@ int initial_set() {
   int prompt, status;
   if (mynode() == 0) {
     // Print banner
-    printf("fWilson flow with optional MCRG blocking\n");//added by aac
-    /*printf("SU(3) with Kogut--Susskind fermions\n");
-    printf("S4b phase order parameter measurement\n");*///commented out by aac
+    printf("Fermionic SU(3) Wilson Flow with PBP measurement\n");
     printf("MIMD version 7ish\n");
     printf("Machine = %s, with %d nodes\n", machine_type(), numnodes());
     printf("nHYP links, reading alpha_smear parameters from infile\n");
@@ -111,7 +107,6 @@ int readin(int prompt) {
   if (this_node == 0) {
     printf("\n\n");
     status = 0;
-    // copied -------start
     // Wilson flow parameters
 		IF_OK status += get_i(stdin, prompt, "nsave", &par_buf.nsave);
     IF_OK status += get_f(stdin, prompt, "epsilon", &par_buf.epsilon);
@@ -123,7 +118,6 @@ int readin(int prompt) {
     IF_OK status += get_f(stdin, prompt, "tmax", &par_buf.tmax);
     if (par_buf.epsilon * par_buf.tmax < 0)
       node0_printf("WARNING: epsilon and tmax have different signs\n");
-    // copied ----- end
 
     // Limit to only one mass for now
     IF_OK status += get_f(stdin, prompt, "mass", &par_buf.mass);
@@ -138,7 +132,6 @@ int readin(int prompt) {
     IF_OK status += get_f(stdin, prompt, "alpha_hyp1", &par_buf.alpha_hyp1);
     IF_OK status += get_f(stdin, prompt, "alpha_hyp2", &par_buf.alpha_hyp2);
 
-    //copied-----start
     // A maximum of 100 tvalues to perfom blocking should be eough
     IF_OK status += get_i(stdin, prompt, "num_block", &par_buf.num_block);
     if (par_buf.num_block > 100) {
@@ -156,7 +149,6 @@ int readin(int prompt) {
         break;
       }
     }
-    // copied ------- end
 
     // Spectrum source time slice and increment
     IF_OK status += get_i(stdin, prompt, "source_start", &par_buf.src_start);
@@ -179,11 +171,9 @@ int readin(int prompt) {
     // Find out what kind of starting lattice to use
     IF_OK status += ask_starting_lattice(stdin, prompt, &par_buf.startflag,
                                          par_buf.startfile);
-    // copied ------ start
     // Find out what to do with lattice at end
     IF_OK status += ask_ending_lattice(stdin, prompt, &(par_buf.saveflag),
                                        par_buf.savefile);
-    // copied ------ end
 
     if (status > 0)
       par_buf.stopflag = 1;
@@ -195,14 +185,12 @@ int readin(int prompt) {
   broadcast_bytes((char *)&par_buf, sizeof(par_buf));
   if (par_buf.stopflag != 0)
     normal_exit(0);
-  // copied ------ start
 	nsave = par_buf.nsave;
   epsilon = par_buf.epsilon;
   tmax    = par_buf.tmax;
   num_block = par_buf.num_block;
   for (i=0; i<num_block;i++)
     tblock[i]=par_buf.tblock[i];
-  // copied ------ end
 
   mass = par_buf.mass;
   alpha_smear[0] = par_buf.alpha_hyp0;
@@ -222,10 +210,10 @@ int readin(int prompt) {
     MH = par_buf.MH; //aac*/
 
   startflag = par_buf.startflag;
-  saveflag = par_buf.saveflag; // copied by aac
+  saveflag = par_buf.saveflag; 
   strcpy(startfile, par_buf.startfile);
-  strcpy(savefile, par_buf.savefile);// copied 
-  strcpy(stringLFN, par_buf.savefile);// copied
+  strcpy(savefile, par_buf.savefile); 
+  strcpy(stringLFN, par_buf.savefile);
 
 
   // Do whatever is needed to get lattice

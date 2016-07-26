@@ -16,6 +16,9 @@ void fermion_flow()
 	node0_printf("FERMION_FLOW: fixed epsilon\n");
 	node0_printf("steps per checkpoint = %g\n", N);
 
+	// obtain checkpoint gauge fields
+	wflow(F_OFFSET(link), 0, tmax, 1);
+
 	node0_printf("ksi %g ",t);
   for (n=0; n<npbp; n++){
     grsourcen(EVENANDODD);
@@ -24,13 +27,43 @@ void fermion_flow()
     dot1 = dot_su3_latvec(ksi, ksi, EVENANDODD);
     node0_printf("%.10g  ", dot1.real);
   }
-	//tvar1 = dclock();
-  //yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
-  //node0_printf("fmeas_link time = %f\n",dclock()-ttime);
-  //ttime += dclock() - tvar1;
   node0_printf("\n");
-
+/*
+  // pbp with t = tmax fermions and link0
+  for (dir = 0; dir < 4; dir++){
+    FORALLSITES(i,s){
+      su3mat_copy(&(s->link0[dir]), &(s->link[dir]));
+    }
+  }
+  rephase(ON);
+  block_and_fatten();
+  ttime = dclock();
+  yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
+  ttime = dclock() - ttime;
+  rephase(OFF);
+*/
   // Adjoint flow loop 
+/*
+  for (istep = 0; t > cut; istep++){
+    // flow gauge fields to t, obtain W's
+    tvar = dclock();
+    wflow(F_OFFSET(link0), 0, t, 0);
+    flowtime += dclock() - tvar;
+    counter += (t-ti)/epsilon;
+    node0_printf("ksi %g ", t-epsilon);
+
+    // loop over npbp fields
+    for (n=0; n<npbp; n++){
+      ksi = F_OFFSET(ksi1) + n*sizeof(su3_vector);
+      copy_latvec(ksi, F_OFFSET(lambda3), EVENANDODD);
+      fermion_adjointstep(F_OFFSET(lambda3), epsilon);
+      copy_latvec(F_OFFSET(lambda0), ksi, EVENANDODD);
+      dot1 = dot_su3_latvec(ksi, ksi, EVENANDODD);
+      node0_printf("%.10g  ", dot1.real);
+    }
+    node0_printf("\n");
+    t -= epsilon;
+*/
 
 	node0_printf("\nBEGINNING FERMION ADJOINT FLOW t = tmax -> t = 0\n\n");
 	for (istep = 0; t > cut; istep++){
@@ -62,11 +95,6 @@ void fermion_flow()
     node0_printf("\n");
     t -= epsilon;
 
-		// Measure pbp
-    tvar1 = dclock();
-    yep = fmeas_link(F_OFFSET(chi),F_OFFSET(W0), F_OFFSET(psi), mass);
-    ttime += dclock() - tvar1;
-
 /*  // sequence test
     copy_latvec(F_OFFSET(g_rand),F_OFFSET(chi0),EVENANDODD);
     fermion_forwardstep(F_OFFSET(chi0));
@@ -87,6 +115,20 @@ void fermion_flow()
 */
     node0_printf("\n\n");
   }
+
+	// pbp with t = 0 fermions and link0
+  for (dir = 0; dir < 4; dir++){
+    FORALLSITES(i,s){
+      su3mat_copy(&(s->link0[dir]), &(s->link[dir]));
+    }
+  }
+  rephase(ON);
+  block_and_fatten();
+  ttime = dclock();
+  yep = fmeas_link(F_OFFSET(chi), F_OFFSET(link), F_OFFSET(psi), mass);
+  ttime = dclock() - ttime;
+  rephase(OFF);
+
 
   node0_printf("\nENDING FERMION ADJOINT FLOW \n\n");
 

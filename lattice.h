@@ -11,8 +11,6 @@
 #include "../include/random.h"    // For double_prn
 // -----------------------------------------------------------------
 
-
-
 // -----------------------------------------------------------------
 // The lattice is an array of this site struct
 typedef struct {
@@ -29,11 +27,9 @@ typedef struct {
 
   // Gauge field
   //su3_matrix link[4]; //wilson_flow uses link[12] not [4]
-  //copied-----start
   su3_matrix link[12];
   su3_matrix fieldstrength[6];
   su3_matrix hyplink1[12], hyplink2[12];//tempmat1,2 and staple already below 
-  //copied---end
 
   // Program-dependent fields
   // Staggered phases, which have been absorbed into the matrices
@@ -51,10 +47,7 @@ typedef struct {
   su3_vector M_inv;
 
   // Temporary vectors and matrices for gauge field and fermion flow
-  su3_matrix link0[4];         // aaa
-  su3_matrix link1[4];
-  su3_matrix link2[4];
-  su3_matrix link3[4];
+  su3_matrix link0[4*5];
   su3_vector lambda0;           // temp fields used in adjointstep
   su3_vector lambda1;
   su3_vector lambda2;
@@ -85,7 +78,6 @@ typedef struct {
   su3_matrix tempmat1, tempmat2, staple;
 } site;
 
-// copied---start
 // Defines for index on field_strength
 #define FS_XY 0
 #define FS_XZ 1
@@ -93,7 +85,6 @@ typedef struct {
 #define FS_XT 3
 #define FS_YT 4
 #define FS_ZT 5
-//copied----end
 // -----------------------------------------------------------------
 
 
@@ -138,7 +129,6 @@ EXTERN double_prn node_prn;
 
 EXTERN gauge_file *startlat_p;
 
-//copied--------------start
 // Loop stuff
 #define nloop 6
 #define nreps 1
@@ -153,7 +143,6 @@ EXTERN int ch, loop_ch[nloop][max_num];
 EXTERN Real loop_term[max_num][nreps];
 EXTERN int hyp1ind[4][4][4];
 EXTERN int hyp2ind[4][4];
-//copied----------end
 
 // The lattice is a single global variable
 // (actually this is the part of the lattice on this node)
@@ -182,7 +171,6 @@ EXTERN su3_matrix *Staple3[4];
 EXTERN su3_matrix *tempmat1;
 EXTERN su3_matrix *tempmat2;    // Used in Polyakov loop calculation
 
-//copied----------------start
 // Wilson flow stuff
 EXTERN int nsave;
 EXTERN double tmax;
@@ -193,7 +181,6 @@ EXTERN su3_matrix *tempmat1;
 //EXTERN Real alpha_smear[3];
 EXTERN int num_block;
 EXTERN Real tblock[100];
-//copied-----------------end
 
 #endif // _LATTICE_H
 // -----------------------------------------------------------------

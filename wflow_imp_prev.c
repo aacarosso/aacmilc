@@ -1,30 +1,22 @@
 // ------------------------------------------------------------------
 // Flows link to tf given some U(ti) with offset off.
-// Improved scheme for variable epsilon
+// Saves the W's obtained in the last step.
 
-// if argument savelink = 1, it saves nsave configurations:
-// 		t = 0 in link0
-//		t = t_epsmax in link1
-// 		nsave-2 more configurations equally spaced in the eps_max regime.
-// Saves the W's obtained in the last step, for fermion flow.
-// nsave must be consistent with the number of fields link0,1,2,3,... in lattice.h
-
-// Returns an array pointer containing all the eps values in succession.
+// improved scheme for variable epsilon; begins with stepsize = eps
 
 #include "wflow_includes.h"
 //-------------------------------------------------------------------
 
 //-------------------------------------------------------------------
-double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink, double eps_max) {
+void wflow_imp(double eps, field_offset off, Real ti, Real tf, double eps_max) {
   register int dir, i;
 	register site *s;
-  int last=0, step, k=0, j=0;
-	Real l=1, dt, t_epsmax=100;
-  Real t=ti, cut = 1e-7, eps = epsilon;
-  double E, old_value, new_value=0, der_value, check, dS, eta;//, slope_E, slope_td, slope_topo;
-	double E0, td0, topo0;//, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
+  int last=0, step;
+	Real k, l=eps/epsilon, dl;
+  Real t=ti, cut = 1e-7;
+  double E, old_value=0, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
+	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
-	double *epsilons = (double *)malloc((int)(tmax/epsilon)*sizeof(double));
 	complex tc;
   su3_matrix t_mat, *S[4];
   anti_hermitmat *A[4];
@@ -41,47 +33,75 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink, doub
 			su3mat_copy((su3_matrix *)F_PT(s, off+dir*sizeof(su3_matrix)), &(s->link[dir]));
 		}
 	}
+
+	// Must calculate t^2*E at ti (for interpolation) !
+
+	// Finds 8F_munu = sum_{clover} (U - Udag)
+  // Subtracts the (lattice artifact?) trace at each lattice site
+	make_field_strength(F_OFFSET(link), F_OFFSET(fieldstrength));
+
+	// The variables necessary for scale setting: used if tmax==0 only
+	E = 0;
+	FORALLSITES(i, s) {
+		for (dir = 0; dir < 6; dir++) {
+			mult_su3_nn(&(s->fieldstrength[dir]),
+	                &(s->fieldstrength[dir]), &t_mat);
+      tc = trace_su3(&t_mat);
+      E -= (double)tc.real;
+    }
+  }
+  g_doublesum(&E);
+  E /= (volume * 64); // Normalization factor of 1/8 for each F_munu
+  new_value = t * t * E;
+  der_value = fabs(t) * (new_value - old_value) / fabs(eps); // nonsensical
+	
+	// Might as well extract topology
+	topo = 0;
+  FORALLSITES(i, s) {
+    mult_su3_nn(&(s->fieldstrength[0]), // XYZT
+                &(s->fieldstrength[5]), &t_mat);
+    tc = trace_su3(&t_mat);
+    topo -= (double)tc.real;
+
+    mult_su3_nn(&(s->fieldstrength[3]), // XTYZ
+                &(s->fieldstrength[2]), &t_mat);
+    tc = trace_su3(&t_mat);
+    topo -= (double)tc.real;
+
+    mult_su3_na(&(s->fieldstrength[1]), // XZTY;  TY=(YT)^dag
+                &(s->fieldstrength[4]), &t_mat);
+    tc = trace_su3(&t_mat);
+    topo -= (double)tc.real;
+  }
+  g_doublesum(&topo);
+  // Same normalization
+  topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
+
+  // Check with plaquette
+  d_plaquette(&ssplaq, &stplaq);
+  td = (ssplaq + stplaq) / 2;
+  check = 12 * t * t * (3 - td);
   
+	// Don't want to print these, assuming WFLOW at ti has already been calculated before.
+	//node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
+
 	node0_printf("BEGIN WILSON FLOW (IMP) tf = %g  ti = %g\n",tf,ti);
 	
-	if ((savelink == 1) && (ti < cut)){
-		node0_printf("saving t = 0 configuration (1 of %d)\n",nsave);
-		for (dir = 0; dir < 4; dir ++){
-			FORALLSITES(i,s){
-	  	  su3mat_copy(&(s->link[dir]),
-					(su3_matrix *)F_PT(s,F_OFFSET(link0)+dir*sizeof(su3_matrix)));	
-			}
-  	}
-  }
-  
   d_plaquette(&Ps1, &Pt1);
+
+	// In case tf-ti < eps, don't shoot past tf
+	if (t + eps > tf){
+		eps = tf - t;
+		l = eps/epsilon;
+	}
 
 	// Wilson flow!
   for (step = 0; fabs(t) < fabs(tf) - fabs(epsilon)/2; step++){
 		// Save W?
 		if ( pow((t+eps-tf),2) < cut){ last = 1;}
-		
-		// Save nsave fields in eps_max phase
-		if (savelink == 1 && pow(eps - eps_max,2) < cut && pow(epsilons[step-1] - eps_max,2) > cut){
-			dt = eps_max*floor((tmax - t)/(eps_max*(nsave - 1)));
-			t_epsmax = t;
-			node0_printf(" t_epsmax = %g dt = %g\n", t_epsmax, dt);
-		}
-		//node0_printf(" k*dt %g pow(t - t_epsmax - k*dt,2) = %g\n", (double)j, pow(t - t_epsmax - j*dt,2));
-		if (savelink == 1 && pow(t - t_epsmax - j*dt,2) < cut && j < nsave - 1){
-			node0_printf("saving t = %g configuration (%d of %d)\n", t, j+2, nsave);
-			for (dir = 0; dir < 4; dir ++){
-				FORALLSITES(i,s){
-	  		  su3mat_copy(&(s->link[dir]),
-						(su3_matrix *)F_PT(s, F_OFFSET(link0) + (4*(j+1)+dir)*sizeof(su3_matrix)));
-				}
-  		}
-			j += 1;
-  	}
     
 		fstout_step_rk(S, A, eps, last);
 		t += eps;
-		epsilons[step] = eps;
 
 		// previous data for the interpolation
 		E0 = E;
@@ -129,14 +149,15 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink, doub
     }
     g_doublesum(&topo);
     // Same normalization
-		topo *= 0.02533029591058444286/64;
+    topo *= 0.02533029591058444286/64;
     //topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
+		// should be topo/(4*pi^2)
 
     // Check with plaquette
     d_plaquette(&ssplaq, &stplaq);
     td = (ssplaq + stplaq) / 2;
     check = 12 * t * t * (3 - td);
-/*
+
 		// Interpolate between eps steps
 		if ( eps > epsilon ){
 			//slope_E = (E - E0)/eps;
@@ -145,7 +166,7 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink, doub
 			slope_topo = (topo - topo0)/eps;
 			tk = t - eps;
 			new_valuek = tk*tk*E0;
-			for (k = 1; k < l-0.01; k++){
+			for (k = 1; k < l - cut; k++){
 			  old_valuek = new_valuek;
 				tk = t - eps + k*epsilon;
 				//Ek = slope_E*(k*epsilon) + E0;
@@ -156,11 +177,11 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink, doub
 				//new_valuek = tk*tk*Ek;
 				Ek = new_valuek/(tk*tk);
 				der_valuek = tk*(new_valuek - old_valuek)/epsilon;
-				//node0_printf("WFLOW %g %g %g %g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
-				//              der_valuek, checkk, topok);
+				node0_printf("WFLOW %g %g %g %g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
+				              der_valuek, checkk, topok);
 			}
 		}
-*/
+
     node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
 		
 		// Setting epsilon
@@ -173,7 +194,7 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink, doub
 		eps = eta/dS;
 		//node0_printf(" eta/dS %g", eps);
 		//dl = floor(100*eps)/(epsilon*100) - l;
-		if (eps < (l+0.99)*epsilon){
+		if (eps < (l+0.9999)*epsilon){
 			eps = l*epsilon;
 		}
 		else {
@@ -195,23 +216,19 @@ double *wflow_imp_epsvals(field_offset off, Real ti, Real tf, int savelink, doub
 		// Don't shoot past tmax
 		if (t + eps > tf){
 			eps = tf - t;
-			l = 100*eps/(100*epsilon);
+			l = eps/epsilon;
 			//node0_printf(" eps %g l %g\n", eps, l);
 		}
 
     last = 0;
   }
-  node0_printf("END WILSON FLOW\nsteps = %d\n\n",step+1);
+  node0_printf("END WILSON FLOW\n");
 
   for (dir = 0; dir < 4; dir++) {
     free(S[dir]);
     free(A[dir]);
   }
-
-	// fill the rest of eps array with zeroes
-	for (step = step; step < (int)(tmax/epsilon)-1; step++) epsilons[step] = 0;
-
-	return epsilons;
+	return;
 }
 
 

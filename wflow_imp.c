@@ -8,12 +8,12 @@
 //-------------------------------------------------------------------
 
 //-------------------------------------------------------------------
-void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
+void wflow_imp(double eps, field_offset off, Real ti, Real tf, double eps_max) {
   register int dir, i;
 	register site *s;
   int last=0, step;
 	Real k, l=eps/epsilon, dl;
-  Real t=ti, cut = 1e-7, eps_max = 0.15;
+  Real t=ti, cut = 1e-7;
   double E, old_value=0, new_value=0, der_value, check, dS, eta, slope_E, slope_td, slope_topo;
 	double E0, td0, topo0, Ek, tdk, topok, old_valuek, new_valuek, der_valuek, checkk, tk;
   double ssplaq, stplaq, td, Ps1, Pt1, Ps2, Pt2, topo, slope_newval;
@@ -82,7 +82,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
   td = (ssplaq + stplaq) / 2;
   check = 12 * t * t * (3 - td);
   
-	// Don't want to print these, assuming WFLOW at ti has already been calculated elsewhere.
+	// Don't want to print these, assuming WFLOW at ti has already been calculated before.
 	//node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
 
 	node0_printf("BEGIN WILSON FLOW (IMP) tf = %g  ti = %g\n",tf,ti);
@@ -92,7 +92,6 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 	// In case tf-ti < eps, don't shoot past tf
 	if (t + eps > tf){
 		eps = tf - t;
-		l = eps/epsilon;
 	}
 
 	// Wilson flow!
@@ -149,7 +148,9 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
     }
     g_doublesum(&topo);
     // Same normalization
-    topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
+    topo *= 0.02533029591058444286/64;
+    //topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
+		// should be topo/(4*pi^2)
 
     // Check with plaquette
     d_plaquette(&ssplaq, &stplaq);
@@ -164,7 +165,7 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 			slope_topo = (topo - topo0)/eps;
 			tk = t - eps;
 			new_valuek = tk*tk*E0;
-			for (k = 1; k < l - cut; k++){
+			for (k = 1; k < eps/epsilon - cut; k++){
 			  old_valuek = new_valuek;
 				tk = t - eps + k*epsilon;
 				//Ek = slope_E*(k*epsilon) + E0;
@@ -175,37 +176,26 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 				//new_valuek = tk*tk*Ek;
 				Ek = new_valuek/(tk*tk);
 				der_valuek = tk*(new_valuek - old_valuek)/epsilon;
-				//node0_printf("WFLOW %g %g %g %g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
-				//              der_valuek, checkk, topok);
+				//node0_printf("WFLOW %g %g %g %.10g %g %g %g (interp)\n", tk, tdk, Ek, new_valuek, 
+				  //            der_valuek, checkk, topok);
 			}
 		}
 
-    node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
+    node0_printf("WFLOW %g %g %g %.10g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
 		
 		// Setting epsilon
 		d_plaquette(&Ps2, &Pt2);
 		dS = fabs((Ps2 + Pt2)/2 - (Ps1 + Pt1)/2);
 		if (step == 0){
 			eta = dS*eps;
-			//node0_printf(" eta %g\n", eta);
 		}
-		eps = eta/dS;
-		//node0_printf(" eta/dS %g", eps);
-		//dl = floor(100*eps)/(epsilon*100) - l;
-		if (eps < (l+0.99)*epsilon){
-			eps = l*epsilon;
+		
+		if (eta/dS > eps + epsilon){
+			eps += epsilon;
 		}
-		else {
-			//node0_printf(" l += %g\n", dl);
-			l += 1;
-			eps = l*epsilon;
-		}
-		//node0_printf(" eps_new %g l_new %g\n",eps,l);
 
 		if (eps >= eps_max){
 			eps = eps_max;
-			l = eps_max/epsilon;
-			//node0_printf(" eps_max %g l %g\n", eps_max, l);
 		}
 
 		Ps1 = Ps2;
@@ -214,8 +204,6 @@ void wflow_imp(double eps, field_offset off, Real ti, Real tf) {
 		// Don't shoot past tmax
 		if (t + eps > tf){
 			eps = tf - t;
-			l = eps/epsilon;
-			//node0_printf(" eps %g l %g\n", eps, l);
 		}
 
     last = 0;

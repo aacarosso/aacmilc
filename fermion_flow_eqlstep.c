@@ -3,20 +3,7 @@
 
 #include "wflow_includes.h"
 
-// sums the elements of array eps up to and including the index max_index.
-double sum_eps(double *eps, int max_index)
-{
-	int i;
-	double sum = 0;
-	for ( i=0; i < max_index; i++){
-		sum += eps[i];
-		//node0_printf("eps[%d] = %g sum = %g\n",i,eps[i],sum);
-	}
-	return sum;
-}
-
-// Main procedure for geometric (8) fermion flow.
-void fermion_flow_geom8(double eps_max)
+void fermion_flow_eqlstep(double eps_max)
 {
 	register int i;
 	register site *s;
@@ -25,12 +12,7 @@ void fermion_flow_geom8(double eps_max)
   Real t = tmax, cut = 1e-7;
   complex dot1;
 
-	node0_printf("\n\nFERMION_FLOW_GEOM8\n\n");
-
-	// block first?
-	//rephase(ON);
-	//block_and_fatten();
-	//rephase(OFF);
+	node0_printf("\n\nFERMION_FLOW_EQLSTEP\n\n");
 	
 	// flow gauge fields to tmax and determine eps values
   eps = wflow_imp_epsvals_geom8(F_OFFSET(link), 1, eps_max);
@@ -81,51 +63,19 @@ void fermion_flow_geom8(double eps_max)
 	
   node0_printf("\nBEGIN FERMION ADJOINT FLOW\n\n");
 
-	int R = 8;
-	double ts = R*eps_max*floor((tmax - t_epsmax - eps[num_eps-1])/(R*eps_max));
-	node0_printf("ts = %g\n",ts);
-
-	// t > t_epsmax + 7/8*ts REGIME
-	fermion_flow_chunk(F_OFFSET(link0)+4*4*sizeof(su3_matrix), t_epsmax+7.0/R*ts, tmax, eps_max,
-		eps_max);
-
-	// t > t_epsmax REGIME: geometric scheme
-	fermion_flow_chunk(F_OFFSET(link0)+3*4*sizeof(su3_matrix), 
-		t_epsmax+6.0/R*ts, t_epsmax+7.0/R*ts, eps_max, eps_max);
-
-	double times1[] = {5.0/8*ts+t_epsmax};
-	wflow_imp_saves(eps_max,F_OFFSET(link0)+2*4*sizeof(su3_matrix), t_epsmax+4.0/R*ts,
-		t_epsmax+5.0/R*ts+epsilon, times1, 1, eps_max);
-	fermion_flow_chunk(F_OFFSET(link0)+4*4*sizeof(su3_matrix), t_epsmax+5.0/R*ts,
-		t_epsmax+6.0/R*ts, eps_max, eps_max);
-	fermion_flow_chunk(F_OFFSET(link0)+2*4*sizeof(su3_matrix), t_epsmax+4.0/R*ts,
-		t_epsmax+5.0/R*ts, eps_max, eps_max);
-
-	double times2[] = {1.0/R*ts+t_epsmax,2.0/R*ts+t_epsmax,3.0/R*ts+t_epsmax};
-	wflow_imp_saves(eps_max,F_OFFSET(link0)+1*4*sizeof(su3_matrix), t_epsmax,
-		t_epsmax+3.0/R*ts+epsilon, times2, 3, eps_max);
-	fermion_flow_chunk(F_OFFSET(link0)+4*4*sizeof(su3_matrix), t_epsmax+3.0/R*ts,
-		t_epsmax+4.0/R*ts, eps_max, eps_max);
-	fermion_flow_chunk(F_OFFSET(link0)+3*4*sizeof(su3_matrix), t_epsmax+2.0/R*ts,
-		t_epsmax+3.0/R*ts, eps_max, eps_max);
-	fermion_flow_chunk(F_OFFSET(link0)+2*4*sizeof(su3_matrix), t_epsmax+1.0/R*ts,
-		t_epsmax+2.0/R*ts, eps_max, eps_max);
-	fermion_flow_chunk(F_OFFSET(link0)+1*4*sizeof(su3_matrix), t_epsmax,
-		t_epsmax+1.0/R*ts, eps_max, eps_max);
-	
-	// t < t_epsmax REGIME: fixed checkpoints
-  j = num_tepsmax;
-	int sd = (int)floor(num_tepsmax/nsave);
+	// fixed checkpoints, separated by equal number of steps
+  j = num_eps;
+	int sd = (int)floor(num_eps/nsave);
   node0_printf("sd = %d\n", sd);
   for ( i = 0; i <= num_eps; i++){
     node0_printf("sum_eps(%d) = %f\n",i,sum_eps(eps,i));
   }
-  double *saves = (double *)malloc(nsave*sizeof(double));
-  for ( i = 0; i < nsave; i++){
+  double *saves = (double *)malloc((nsave+1)*sizeof(double));
+  for ( i = 0; i < nsave+1; i++){
     saves[i] = sum_eps(eps, i*sd);
     node0_printf("saves[%d] = %g\n", i, saves[i]);
   }
-  wflow_imp_saves(epsilon, F_OFFSET(link0), 0, t_epsmax, saves, nsave, eps_max);
+  wflow_imp_saves(epsilon, F_OFFSET(link0), 0, tmax, saves, nsave, eps_max);
   for (i = nsave-1; i >= 0; i--){
     node0_printf("sum_eps(%d*sd) = %g, eps[%d*sd] = %g\n",i,sum_eps(eps,i*sd),i,eps[i*sd]);
     fermion_flow_chunk(F_OFFSET(link0)+i*4*sizeof(su3_matrix), sum_eps(eps, i*sd), 

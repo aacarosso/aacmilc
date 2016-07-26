@@ -12,8 +12,8 @@ void wflow(field_offset off, Real ti, Real tf, int savelink) {
   register int dir, i;
 	register site *s;
   int last=0, k=1, step;
-  Real t=0, cut = 1e-7, N = floor(tmax/(epsilon*nsave));
-  double E, old_value, new_value=0, der_value, check;
+  double E, old_value, new_value=0, der_value, check, eps = 1*epsilon;
+  Real t=0, cut = 1e-7, N = floor(tmax/(eps*nsave));
   double ssplaq, stplaq, td, topo;
 	complex tc;
   su3_matrix t_mat, *S[4];
@@ -46,15 +46,15 @@ void wflow(field_offset off, Real ti, Real tf, int savelink) {
   
 	// Wilson flow!
 	t = ti;
-  for (step = 0; fabs(t) < fabs(tf) - fabs(epsilon)/2; step++){
+  for (step = 0; fabs(t) < fabs(tf) - fabs(eps)/2; step++){
 	  // save W?
-    if ( pow((t+epsilon-tf),2) < cut){ last = 1;}
+    if ( pow((t+eps-tf),2) < cut){ last = 1;}
     
-		fstout_step_rk(S, A, epsilon, last);
-		t += epsilon;
+		fstout_step_rk(S, A, eps, last);
+		t += eps;
 
 		// save link?
-		if ((savelink == 1) && (k < nsave) && (pow(t/epsilon - N*k,2) < cut )){
+		if ((savelink == 1) && (k < nsave) && (pow(t/eps - N*k,2) < cut )){
 		  node0_printf("saving t = %g configuration (%d of %d)\n", t, k+1,nsave);
 			for (dir = 0; dir < 4; dir ++){
 			  FORALLSITES(i,s){
@@ -83,8 +83,8 @@ void wflow(field_offset off, Real ti, Real tf, int savelink) {
     g_doublesum(&E);
     E /= (volume * 64); // Normalization factor of 1/8 for each F_munu
     new_value = t * t * E;
-    der_value = fabs(t) * (new_value - old_value) / fabs(epsilon);
-    // Any negative signs in t and epsilon should cancel out anyway...
+    der_value = fabs(t) * (new_value - old_value) / fabs(eps);
+    // Any negative signs in t and eps should cancel out anyway...
 
     //Might as well extract topology
     topo = 0;
@@ -106,13 +106,14 @@ void wflow(field_offset off, Real ti, Real tf, int savelink) {
     }
     g_doublesum(&topo);
     // Same normalization
-    topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
+		topo *= 0.02533029591058444286/64;
+    //topo /= (volume * 64 * 0.02533029591058444286); // 1 / (volume / 4pi^2)
 
     // Check with plaquette
     d_plaquette(&ssplaq, &stplaq);
     td = (ssplaq + stplaq) / 2;
     check = 12 * t * t * (3 - td);
-    //node0_printf("WFLOW %g %g %g %g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
+    node0_printf("WFLOW %g %g %g %.10g %g %g %g\n", t, td, E, new_value, der_value, check, topo);
     last = 0;
   }
   node0_printf("END WILSON FLOW\n");
